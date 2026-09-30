@@ -53,41 +53,41 @@ Analytics Request → Smart Query (Neon + Supabase Combined View)
 ##  Core Features
 
 ### Farm Operations Management
-- ** Animal Management**: Complete lifecycle tracking from birth to sale
+- **Animal Management**: Complete lifecycle tracking from birth to sale
   - Tag numbers, breed information, pedigree tracking
   - Location management and movement history
   - Weight tracking and growth monitoring
   - Photo attachments and custom notes
 
-- ** Health Records**: Comprehensive veterinary care tracking
+- **Health Records**: Comprehensive veterinary care tracking
   - Vaccination schedules with automatic reminders
   - Treatment records and medication logs
   - Deworming schedules
   - Quarantine and illness management
   - Veterinarian notes and follow-ups
 
-- ** Breeding Management**: Optimize reproduction programs
+- **Breeding Management**: Optimize reproduction programs
   - Heat detection and mating records
   - Pregnancy tracking and status updates
   - Expected delivery date calculations
   - Kidding/calving records with complications tracking
   - AI (Artificial Insemination) vs natural breeding
 
-- ** Feed Inventory**: Never run out of feed supplies
+- **Feed Inventory**: Never run out of feed supplies
   - Multi-feed type management
   - Stock level tracking with low-stock alerts
   - Consumption records by animal category
   - Supplier management
   - Cost tracking per feeding
 
-- ** Commercial Operations**: Complete financial tracking
+- **Commercial Operations**: Complete financial tracking
   - Animal sales with buyer management
   - Expense categorization and tracking
   - Purchase orders and invoicing
   - Profit/loss analysis
   - Payment mode tracking
 
-- ** Staff Management**: Role-based team collaboration
+- **Staff Management**: Role-based team collaboration
   - Multiple farms per organization
   - Role-based access control (6 predefined roles)
   - Staff invitation system via email
@@ -95,14 +95,14 @@ Analytics Request → Smart Query (Neon + Supabase Combined View)
   - Designation and joining date tracking
 
 ### Analytics & Reporting
-- ** Real-time Dashboard**: Key metrics at a glance
+- **Real-time Dashboard**: Key metrics at a glance
   - Total animals by gender and status
   - Upcoming vaccinations and treatments
   - Recent sales and expenses
   - Low stock alerts
   - Sick animal counts
 
-- ** Historical Analytics**: Multi-year insights
+- **Historical Analytics**: Multi-year insights
   - Current year from Neon DB (live data)
   - Historical years from Supabase (archived)
   - Combined view for trend analysis
