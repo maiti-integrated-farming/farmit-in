@@ -1,6 +1,24 @@
-# Farmit - Enterprise Multi-Tenant SaaS Farm Management Platform
+<div align="center">
+  <img src="logo-256.png" alt="FarmIt Logo" width="256" height="256">
+  
+  # FarmIt - Enterprise Multi-Tenant SaaS Farm Management Platform
+  
+  > **A production-ready, scalable farm management platform with advanced data lifecycle management**
 
-> **A production-ready, scalable farm management platform with advanced data lifecycle management**
+  ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+  ![Flask](https://img.shields.io/badge/Flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white)
+  ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+  ![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+  ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+  
+  ![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)
+  ![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen?style=for-the-badge)
+  ![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
+  ![Version](https://img.shields.io/badge/Version-2.0.0-blue?style=for-the-badge)
+
+</div>
+
+---
 
 FarmIt is a comprehensive **multi-tenant SaaS platform** designed for modern farm operations. Manage animals, health records, breeding programs, feed inventory, and commercial activities with enterprise-grade security and performance.
 
