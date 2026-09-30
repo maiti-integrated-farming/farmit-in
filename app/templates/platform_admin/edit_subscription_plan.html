@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if plan else 'Create' }} Subscription Plan - Platform Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-{{ 'pencil' if plan else 'plus-circle' }}"></i> 
+                        {{ 'Edit' if plan else 'Create New' }} Subscription Plan
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                {{ form.name.label(class="form-label") }}
+                                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                                {% for error in form.name.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Status</label>
+                                <div class="form-check form-switch">
+                                    {{ form.is_active(class="form-check-input") }}
+                                    {{ form.is_active.label(class="form-check-label") }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="2") }}
+                        </div>
+
+                        <hr class="my-4">
+                        <h5>Pricing</h5>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.price_amount.label(class="form-label") }}
+                                {{ form.price_amount(class="form-control" + (" is-invalid" if form.price_amount.errors else "")) }}
+                                {% for error in form.price_amount.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.price_currency.label(class="form-label") }}
+                                {{ form.price_currency(class="form-select") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.billing_period.label(class="form-label") }}
+                                {{ form.billing_period(class="form-select") }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_popular(class="form-check-input") }}
+                                {{ form.is_popular.label(class="form-check-label") }}
+                            </div>
+                            <small class="text-muted">Mark this plan as "Most Popular" for marketing</small>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5>Resource Limits</h5>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.max_farms.label(class="form-label") }}
+                                {{ form.max_farms(class="form-control" + (" is-invalid" if form.max_farms.errors else "")) }}
+                                {% for error in form.max_farms.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.max_animals.label(class="form-label") }}
+                                {{ form.max_animals(class="form-control" + (" is-invalid" if form.max_animals.errors else "")) }}
+                                {% for error in form.max_animals.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.max_staff.label(class="form-label") }}
+                                {{ form.max_staff(class="form-control" + (" is-invalid" if form.max_staff.errors else "")) }}
+                                {% for error in form.max_staff.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.storage_limit_gb.label(class="form-label") }}
+                                {{ form.storage_limit_gb(class="form-control" + (" is-invalid" if form.storage_limit_gb.errors else "")) }}
+                                {% for error in form.storage_limit_gb.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5>Features</h5>
+
+                        <div class="mb-3">
+                            {{ form.features.label(class="form-label") }}
+                            {{ form.features(class="form-control", rows="4", placeholder="Advanced analytics, Priority support, API access") }}
+                            <small class="text-muted">Enter features separated by commas</small>
+                        </div>
+
+                        {% if plan %}
+                        <div class="alert alert-info">
+                            <strong>Note:</strong> Changes to this plan will affect {{ plan.subscriber_count }} active subscription(s).
+                        </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2 mt-4">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('platform_admin.subscription_plans') }}" class="text-muted">
+                            <i class="bi bi-arrow-left"></i> Back to Plans
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

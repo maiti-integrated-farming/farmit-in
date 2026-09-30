@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4>{{ title }}</h4>
+</div>
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    {{ form.tag_no.label(class="form-label") }}
+                    {{ form.tag_no(class="form-control") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-control") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.gender.label(class="form-label") }}
+                    {{ form.gender(class="form-select") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.breed_id.label(class="form-label") }}
+                    {{ form.breed_id(class="form-select") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.date_of_birth.label(class="form-label") }}
+                    {{ form.date_of_birth(class="form-control") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.color.label(class="form-label") }}
+                    {{ form.color(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.birth_weight.label(class="form-label") }}
+                    {{ form.birth_weight(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.current_weight.label(class="form-label") }}
+                    {{ form.current_weight(class="form-control") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.source.label(class="form-label") }}
+                    {{ form.source(class="form-select") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.status.label(class="form-label") }}
+                    {{ form.status(class="form-select") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.location_id.label(class="form-label") }}
+                    {{ form.location_id(class="form-select") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.purchase_date.label(class="form-label") }}
+                    {{ form.purchase_date(class="form-control") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.purchase_price.label(class="form-label") }}
+                    {{ form.purchase_price(class="form-control") }}
+                </div>
+                <div class="col-12">
+                    {{ form.remarks.label(class="form-label") }}
+                    {{ form.remarks(class="form-control", rows=2) }}
+                </div>
+            </div>
+            <div class="mt-4">
+                {{ form.submit(class="btn btn-farm") }}
+                <a href="{{ url_for('animals.list_animals') }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

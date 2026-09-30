@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Select Farm{% endblock %}
+{% block fullpage %}
+<div class="login-page">
+    <div class="card login-card p-4" style="width: 100%; max-width: 600px;">
+        <div class="text-center mb-4">
+            <h3 class="text-success"><i class="bi bi-geo-alt"></i> Select Farm</h3>
+            <p class="text-muted">Choose the farm you want to manage</p>
+            
+            <!-- Show user role badge -->
+            {% if current_user.is_platform_admin %}
+            <span class="badge bg-danger"><i class="bi bi-shield-lock"></i> Platform Admin</span>
+            {% elif current_user.is_organization_owner %}
+            <span class="badge bg-primary"><i class="bi bi-star-fill"></i> Organization Owner</span>
+            {% elif current_user.is_organization_admin %}
+            <span class="badge bg-info"><i class="bi bi-person-badge"></i> Organization Administrator</span>
+            {% else %}
+            <span class="badge bg-secondary"><i class="bi bi-person"></i> Farm Staff</span>
+            {% endif %}
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        <form method="POST" class="text-center">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="row g-3">
+                {% if memberships %}
+                    {% for membership in memberships %}
+                    <div class="col-md-6 col-lg-4">
+                        <button type="submit" name="farm_id" value="{{ membership.farm.id }}"
+                                class="btn btn-outline-primary w-100 p-3 text-start">
+                            <i class="bi bi-geo-alt text-success"></i>
+                            <strong>{{ membership.farm.name }}</strong>
+                            <br><small class="text-muted">{{ membership.role.name }}</small>
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% elif farms %}
+                    {# Platform admin sees all farms #}
+                    {% for farm in farms %}
+                    <div class="col-md-6 col-lg-4">
+                        <button type="submit" name="farm_id" value="{{ farm.id }}"
+                                class="btn btn-outline-warning w-100 p-3 text-start">
+                            <i class="bi bi-shield-lock text-danger"></i>
+                            <strong>{{ farm.name }}</strong>
+                            <br><small class="text-muted">{{ farm.organization.name }}</small>
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No farms assigned to your account yet.
+                        {% if current_user.is_organization_owner %}
+                        <br><a href="{{ url_for('onboarding.setup_farm') }}">Create your first farm</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </form>
+        
+        <p class="text-center mt-3 mb-0">
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

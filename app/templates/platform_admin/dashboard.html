@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Platform Admin Dashboard - FarmIt{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="bi bi-shield-lock"></i> Platform Admin Dashboard</h2>
+            <p class="text-muted">System overview and management</p>
+            <hr>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link active" href="{{ url_for('platform_admin.dashboard') }}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('platform_admin.organizations') }}">
+                <i class="bi bi-building"></i> Organizations
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('platform_admin.users') }}">
+                <i class="bi bi-people"></i> Users
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('platform_admin.subscription_plans') }}">
+                <i class="bi bi-credit-card"></i> Plans
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('platform_admin.analytics') }}">
+                <i class="bi bi-graph-up"></i> Analytics
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('platform_admin.system_health') }}">
+                <i class="bi bi-heart-pulse"></i> System Health
+            </a>
+        </li>
+    </ul>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-building text-primary" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2">{{ stats.total_organizations }}</h3>
+                    <p class="text-muted mb-0">Organizations</p>
+                    <small class="text-success">+{{ stats.new_orgs_this_month }} this month</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <i class="bi bi-people text-info" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2">{{ stats.total_users }}</h3>
+                    <p class="text-muted mb-0">Total Users</p>
+                    <small class="text-success">+{{ stats.new_users_this_month }} this month</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-cash-stack text-success" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2">${{ stats.monthly_revenue }}</h3>
+                    <p class="text-muted mb-0">Monthly Revenue</p>
+                    <small class="text-success">+{{ stats.revenue_growth }}%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2">{{ stats.expiring_trials }}</h3>
+                    <p class="text-muted mb-0">Expiring Trials</p>
+                    <small class="text-muted">Next 7 days</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Organizations -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-building"></i> Recent Organizations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for org in recent_organizations %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('platform_admin.organization_detail', org_id=org.id) }}">
+                                            {{ org.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if org.subscription_status == 'ACTIVE' else 'warning' }}">
+                                            {{ org.subscription_status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ org.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{{ url_for('platform_admin.organizations') }}" class="btn btn-sm btn-outline-primary">
+                        View All <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscription Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Subscription Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="subscriptionChart" style="max-height: 250px;"></canvas>
+                    <div class="mt-3">
+                        {% for plan_stat in stats.subscription_distribution %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>{{ plan_stat.name }}</span>
+                            <strong>{{ plan_stat.count }} ({{ plan_stat.percentage }}%)</strong>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- System Alerts -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="bi bi-bell"></i> System Alerts</h5>
+                </div>
+                <div class="card-body">
+                    {% if alerts %}
+                    <ul class="list-unstyled mb-0">
+                        {% for alert in alerts %}
+                        <li class="mb-2">
+                            <i class="bi bi-exclamation-circle text-{{ alert.severity }}"></i>
+                            {{ alert.message }}
+                            <small class="text-muted d-block">{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted mb-0">No alerts at this time</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('platform_admin.subscription_plans') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-circle"></i> Create Subscription Plan
+                        </a>
+                        <a href="{{ url_for('platform_admin.organizations') }}" class="btn btn-outline-info">
+                            <i class="bi bi-building"></i> View All Organizations
+                        </a>
+                        <a href="{{ url_for('platform_admin.users') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-people"></i> Manage Users
+                        </a>
+                        <a href="{{ url_for('platform_admin.system_health') }}" class="btn btn-outline-success">
+                            <i class="bi bi-heart-pulse"></i> System Health Check
+                        </a>
+                        <button class="btn btn-outline-danger" onclick="return confirm('Run data archival now?')">
+                            <i class="bi bi-archive"></i> Trigger Data Archival
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

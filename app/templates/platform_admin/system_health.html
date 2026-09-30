@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% block title %}System Health - Platform Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-heart-pulse"></i> System Health Monitor</h2>
+                    <p class="text-muted">Real-time system status and performance metrics</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary me-2" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    <a href="{{ url_for('platform_admin.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card {{ 'border-success' if system_status.overall == 'healthy' else 'border-warning' if system_status.overall == 'degraded' else 'border-danger' }}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-2">
+                                <i class="bi bi-{{ 'check-circle text-success' if system_status.overall == 'healthy' else 'exclamation-triangle text-warning' if system_status.overall == 'degraded' else 'x-circle text-danger' }}"></i>
+                                System Status: <span class="text-uppercase">{{ system_status.overall }}</span>
+                            </h4>
+                            <p class="text-muted mb-0">Last checked: {{ system_status.last_check.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        </div>
+                        <div class="text-end">
+                            <h5>Uptime: {{ system_status.uptime_days }} days</h5>
+                            <p class="text-muted mb-0">{{ system_status.uptime_percentage }}% this month</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Component Status -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi bi-database {{ 'text-success' if db_health.status == 'healthy' else 'text-danger' }}" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Neon Database</h6>
+                    <span class="badge bg-{{ 'success' if db_health.status == 'healthy' else 'danger' }}">
+                        {{ db_health.status|upper }}
+                    </span>
+                    <p class="small text-muted mb-0 mt-2">{{ db_health.response_time }}ms response</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi bi-archive {{ 'text-success' if supabase_health.status == 'healthy' else 'text-danger' }}" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Supabase Archive</h6>
+                    <span class="badge bg-{{ 'success' if supabase_health.status == 'healthy' else 'danger' }}">
+                        {{ supabase_health.status|upper }}
+                    </span>
+                    <p class="small text-muted mb-0 mt-2">{{ supabase_health.response_time }}ms response</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi bi-lightning {{ 'text-success' if redis_health.status == 'healthy' else 'text-warning' }}" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Redis Cache</h6>
+                    <span class="badge bg-{{ 'success' if redis_health.status == 'healthy' else 'warning' }}">
+                        {{ redis_health.status|upper }}
+                    </span>
+                    <p class="small text-muted mb-0 mt-2">{{ redis_health.memory_usage }}% memory</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi bi-clock {{ 'text-success' if celery_health.status == 'healthy' else 'text-danger' }}" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Celery Workers</h6>
+                    <span class="badge bg-{{ 'success' if celery_health.status == 'healthy' else 'danger' }}">
+                        {{ celery_health.status|upper }}
+                    </span>
+                    <p class="small text-muted mb-0 mt-2">{{ celery_health.active_workers }} active</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-database"></i> Neon Database Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <h6 class="text-muted">Total Size</h6>
+                            <h4>{{ neon_metrics.size_gb }} GB</h4>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: {{ neon_metrics.usage_percentage }}%"></div>
+                            </div>
+                            <small class="text-muted">{{ neon_metrics.usage_percentage }}% of limit</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h6 class="text-muted">Active Connections</h6>
+                            <h4>{{ neon_metrics.active_connections }}</h4>
+                            <small class="text-muted">/ {{ neon_metrics.max_connections }} max</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h6 class="text-muted">Queries/sec</h6>
+                            <h4>{{ neon_metrics.queries_per_second }}</h4>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h6 class="text-muted">Avg Query Time</h6>
+                            <h4>{{ neon_metrics.avg_query_time }}ms</h4>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6>Top Tables by Size</h6>
+                    <ul class="list-unstyled">
+                        {% for table in neon_metrics.top_tables %}
+                        <li class="d-flex justify-content-between mb-2">
+                            <span>{{ table.name }}</span>
+                            <span class="badge bg-secondary">{{ table.size }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-archive"></i> Supabase Archive Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <h6 class="text-muted">Archive Size</h6>
+                            <h4>{{ supabase_metrics.size_gb }} GB</h4>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" style="width: {{ supabase_metrics.usage_percentage }}%"></div>
+                            </div>
+                            <small class="text-muted">{{ supabase_metrics.usage_percentage }}% of limit</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h6 class="text-muted">Archived Records</h6>
+                            <h4>{{ supabase_metrics.archived_records|filesizeformat }}</h4>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h6 class="text-muted">Last Archival</h6>
+                            <p class="mb-0">{{ supabase_metrics.last_archival.strftime('%Y-%m-%d') if supabase_metrics.last_archival else 'Never' }}</p>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h6 class="text-muted">Compression Ratio</h6>
+                            <h4>{{ supabase_metrics.compression_ratio }}x</h4>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6>Archive Statistics</h6>
+                    <ul class="list-unstyled">
+                        <li class="d-flex justify-content-between mb-2">
+                            <span>Oldest Record</span>
+                            <span>{{ supabase_metrics.oldest_record }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between mb-2">
+                            <span>Organizations Archived</span>
+                            <span>{{ supabase_metrics.orgs_with_archives }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-speedometer"></i> Application Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <h6 class="text-muted">Avg Response Time</h6>
+                            <h3>{{ performance.avg_response_time }}ms</h3>
+                            <small class="text-{{ 'success' if performance.avg_response_time < 500 else 'warning' }}">
+                                {{ 'Good' if performance.avg_response_time < 500 else 'Needs Attention' }}
+                            </small>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <h6 class="text-muted">Requests/min</h6>
+                            <h3>{{ performance.requests_per_minute }}</h3>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <h6 class="text-muted">Error Rate</h6>
+                            <h3>{{ performance.error_rate }}%</h3>
+                            <small class="text-{{ 'success' if performance.error_rate < 1 else 'danger' }}">
+                                {{ 'Healthy' if performance.error_rate < 1 else 'High' }}
+                            </small>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <h6 class="text-muted">Active Sessions</h6>
+                            <h3>{{ performance.active_sessions }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Jobs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Background Jobs (Celery)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Pending</h6>
+                            <h4>{{ celery_stats.pending }}</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Running</h6>
+                            <h4>{{ celery_stats.running }}</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Completed</h6>
+                            <h4 class="text-success">{{ celery_stats.completed }}</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Failed</h6>
+                            <h4 class="text-danger">{{ celery_stats.failed }}</h4>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6>Recent Jobs</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Job</th>
+                                    <th>Status</th>
+                                    <th>Started</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in recent_jobs %}
+                                <tr>
+                                    <td>{{ job.name }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if job.status == 'completed' else 'primary' if job.status == 'running' else 'danger' }}">
+                                            {{ job.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ job.started_at.strftime('%H:%M:%S') }}</td>
+                                    <td>{{ job.duration }}s</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts & Issues -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-{{ 'success' if not system_alerts else 'warning' }}">
+                <div class="card-header bg-{{ 'success' if not system_alerts else 'warning' }} text-white">
+                    <h5 class="mb-0"><i class="bi bi-bell"></i> Active Alerts & Issues</h5>
+                </div>
+                <div class="card-body">
+                    {% if system_alerts %}
+                    <ul class="list-group">
+                        {% for alert in system_alerts %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-exclamation-triangle text-{{ alert.severity }}"></i>
+                                <strong>{{ alert.component }}</strong>: {{ alert.message }}
+                                <br><small class="text-muted">{{ alert.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary">Resolve</button>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">All Systems Operational</h5>
+                        <p class="text-muted">No active alerts or issues</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0">
+            Dashboard
+            {% if current_user.is_platform_admin %}
+            <span class="badge bg-danger ms-2"><i class="bi bi-shield-lock"></i> Admin Mode</span>
+            {% elif current_user.is_organization_owner %}
+            <span class="badge bg-primary ms-2"><i class="bi bi-star-fill"></i> Owner</span>
+            {% elif current_user.is_organization_admin %}
+            <span class="badge bg-info ms-2"><i class="bi bi-person-badge"></i> Administrator</span>
+            {% endif %}
+        </h4>
+        <small class="text-muted">{{ farm.name }} · Overview</small>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-success-subtle text-success"><i class="bi bi-piggy-bank"></i></div>
+                <div>
+                    <div class="text-muted small">Active Animals</div>
+                    <div class="fs-4 fw-bold">{{ stats.total_animals }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-gender-male"></i></div>
+                <div>
+                    <div class="text-muted small">Males / Females</div>
+                    <div class="fs-4 fw-bold">{{ stats.male_count }} / {{ stats.female_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-danger-subtle text-danger"><i class="bi bi-heart-pulse"></i></div>
+                <div>
+                    <div class="text-muted small">Sick / Due Vaccines</div>
+                    <div class="fs-4 fw-bold">{{ stats.sick_count }} / {{ stats.upcoming_vacc }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-warning-subtle text-warning"><i class="bi bi-cash"></i></div>
+                <div>
+                    <div class="text-muted small">Sales (30d) / Exp (30d)</div>
+                    <div class="fs-5 fw-bold">₹{{ '%.0f'|format(stats.recent_sales) }} / ₹{{ '%.0f'|format(stats.recent_expenses) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feed Management Dashboard -->
+{% if total_daily_feed or feed_alerts %}
+<div class="row g-3 mb-4">
+    <div class="col-md-12">
+        <div class="card border-{% if feed_alert_level == 'critical' %}danger{% elif feed_alert_level == 'warning' %}warning{% else %}info{% endif %}">
+            <div class="card-header bg-{% if feed_alert_level == 'critical' %}danger{% elif feed_alert_level == 'warning' %}warning{% else %}info{% endif %} text-white">
+                <h5 class="mb-0"><i class="bi bi-basket"></i> Feed Management Dashboard</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Daily Feed Requirement -->
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="bi bi-calendar-day fs-2 text-primary"></i>
+                                <h6 class="text-muted mt-2">Daily Feed Requirement</h6>
+                                <h3 class="mb-0">{{ total_daily_feed|round(2) }} kg</h3>
+                                <small class="text-muted">Calculated based on animal needs</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Feed Stock -->
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="bi bi-box-seam fs-2 text-success"></i>
+                                <h6 class="text-muted mt-2">Total Feed Stock</h6>
+                                <h3 class="mb-0">{{ total_feed_stock|round(2) }} kg</h3>
+                                <small class="text-muted">Available inventory</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Days Remaining -->
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="bi bi-hourglass-split fs-2 text-{% if days_feed_remaining < 3 %}danger{% elif days_feed_remaining < 7 %}warning{% else %}info{% endif %}"></i>
+                                <h6 class="text-muted mt-2">Days of Feed Remaining</h6>
+                                <h3 class="mb-0">
+                                    {% if total_daily_feed > 0 %}
+                                    {{ days_feed_remaining|round(1) }} days
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </h3>
+                                <small class="text-muted">At current consumption rate</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Alerts -->
+                {% if feed_alerts %}
+                <div class="mt-4">
+                    <h6 class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Feed Alerts</h6>
+                    <div class="row g-2">
+                        {% for alert in feed_alerts %}
+                        <div class="col-md-6">
+                            <div class="alert alert-{{ 'danger' if alert.severity == 'critical' else 'warning' }} mb-2 py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ alert.feed_type.name if alert.feed_type else 'Unknown Feed' }}</strong>
+                                        <p class="mb-0 small">{{ alert.message }}</p>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="badge bg-{{ 'danger' if alert.severity == 'critical' else 'warning' }}">
+                                            {{ alert.severity|upper }}
+                                        </div>
+                                        <div class="small text-muted">
+                                            {% if alert.days_until_depletion %}
+                                            {{ alert.days_until_depletion|round(1) }} days left
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-2">
+                        <a href="{{ url_for('feed.list_feed') }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-cart-plus"></i> Manage Feed Stock
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between">
+                <strong>Recent Animals</strong>
+                <a href="{{ url_for('animals.list_animals') }}" class="btn btn-sm btn-outline-success">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tag</th>
+                            <th>Name</th>
+                            <th>Gender</th>
+                            <th>Breed</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in recent_animals %}
+                        <tr>
+                            <td><a href="{{ url_for('animals.view_animal', id=a.id) }}">{{ a.tag_no }}</a></td>
+                            <td>{{ a.name or '—' }}</td>
+                            <td>{{ a.gender }}</td>
+                            <td>{{ a.breed.name if a.breed else '—' }}</td>
+                            <td><span class="badge badge-status-{{ a.status }}">{{ a.status }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted">No animals yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white"><strong>Quick Actions</strong></div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('animals.add_animal') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-plus-circle text-success"></i> Add Animal
+                </a>
+                <a href="{{ url_for('health.add_vaccination') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-syringe text-primary"></i> Record Vaccination
+                </a>
+                <a href="{{ url_for('breeding.add_breeding') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-heart text-danger"></i> Breeding Record
+                </a>
+                <a href="{{ url_for('commercial.add_expense') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-receipt text-warning"></i> Add Expense
+                </a>
+                <a href="{{ url_for('feed.consume_feed') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-basket text-info"></i> Feed Consumption
+                </a>
+                <a href="{{ url_for('milking.add_milking_record') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-droplet text-primary"></i> Record Milking
+                </a>
+                <a href="{{ url_for('health.add_enhanced_treatment') }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-prescription2 text-danger"></i> Add Treatment
+                </a>
+            </div>
+        </div>
+        {% if stats.low_stock > 0 %}
+        <div class="alert alert-warning mt-3">
+            <i class="bi bi-exclamation-triangle"></i> {{ stats.low_stock }} feed item(s) below minimum stock.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

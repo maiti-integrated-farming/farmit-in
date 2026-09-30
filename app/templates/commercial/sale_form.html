@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header"><h4>{{ title }}</h4></div>
+<div class="card"><div class="card-body">
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="row g-3">
+        <div class="col-md-6">{{ form.animal_id.label(class="form-label") }}{{ form.animal_id(class="form-select") }}</div>
+        <div class="col-md-6">{{ form.buyer_id.label(class="form-label") }}{{ form.buyer_id(class="form-select") }}</div>
+        <div class="col-md-4">{{ form.sale_date.label(class="form-label") }}{{ form.sale_date(class="form-control") }}</div>
+        <div class="col-md-4">{{ form.live_weight.label(class="form-label") }}{{ form.live_weight(class="form-control") }}</div>
+        <div class="col-md-4">{{ form.rate_per_kg.label(class="form-label") }}{{ form.rate_per_kg(class="form-control") }}</div>
+        <div class="col-md-4">{{ form.total_amount.label(class="form-label") }}{{ form.total_amount(class="form-control") }}</div>
+        <div class="col-md-4">{{ form.payment_mode.label(class="form-label") }}{{ form.payment_mode(class="form-select") }}</div>
+        <div class="col-12">{{ form.remarks.label(class="form-label") }}{{ form.remarks(class="form-control", rows=2) }}</div>
+    </div>
+    <div class="mt-3">{{ form.submit(class="btn btn-farm") }}
+    <a href="{{ url_for('commercial.list_sales') }}" class="btn btn-outline-secondary">Cancel</a></div>
+</form>
+</div></div>
+{% endblock %}

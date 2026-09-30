@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Animals{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h4 class="mb-0">Animals</h4>
+    <div>
+        <a href="{{ url_for('animals.list_locations') }}" class="btn btn-outline-secondary btn-sm me-2"><i class="bi bi-geo"></i> Locations</a>
+        <a href="{{ url_for('animals.add_animal') }}" class="btn btn-farm btn-sm"><i class="bi bi-plus"></i> Add Animal</a>
+    </div>
+</div>
+<div class="mb-3">
+    <a href="{{ url_for('animals.list_animals') }}" class="btn btn-sm {% if not status %}btn-success{% else %}btn-outline-secondary{% endif %}">All</a>
+    <a href="?status=ACTIVE" class="btn btn-sm {% if status=='ACTIVE' %}btn-success{% else %}btn-outline-secondary{% endif %}">Active</a>
+    <a href="?status=PREGNANT" class="btn btn-sm {% if status=='PREGNANT' %}btn-success{% else %}btn-outline-secondary{% endif %}">Pregnant</a>
+    <a href="?status=SICK" class="btn btn-sm {% if status=='SICK' %}btn-success{% else %}btn-outline-secondary{% endif %}">Sick</a>
+    <a href="?gender=MALE" class="btn btn-sm {% if gender=='MALE' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Male</a>
+    <a href="?gender=FEMALE" class="btn btn-sm {% if gender=='FEMALE' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Female</a>
+</div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Tag</th>
+                    <th>Name</th>
+                    <th>Gender</th>
+                    <th>Breed</th>
+                    <th>Location</th>
+                    <th>Weight</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in animals %}
+                <tr>
+                    <td><strong>{{ a.tag_no }}</strong></td>
+                    <td>{{ a.name or '—' }}</td>
+                    <td>{{ a.gender }}</td>
+                    <td>{{ a.breed.name if a.breed else '—' }}</td>
+                    <td>{{ a.location.name if a.location else '—' }}</td>
+                    <td>{{ a.current_weight or '—' }}</td>
+                    <td><span class="badge badge-status-{{ a.status }}">{{ a.status }}</span></td>
+                    <td>
+                        <a href="{{ url_for('animals.view_animal', id=a.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No animals found</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block title %}Start Your Free Trial - FarmIt{% endblock %}
+{% block fullpage %}
+<div class="login-page">
+    <div class="card login-card p-4" style="width: 100%; max-width: 600px;">
+        <div class="text-center mb-4">
+            <h2 class="text-success"><i class="bi bi-flower1"></i> FarmIt</h2>
+            <h4 class="mb-2">Start Your 14-Day Free Trial</h4>
+            <p class="text-muted">Create your farm management organization</p>
+        </div>
+        
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <!-- Personal Information -->
+            <h5 class="mb-3 text-primary"><i class="bi bi-person-circle"></i> Your Information</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.first_name.label(class="form-label") }}
+                    {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else ""), placeholder="John") }}
+                    {% for error in form.first_name.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.last_name.label(class="form-label") }}
+                    {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else ""), placeholder="Doe") }}
+                    {% for error in form.last_name.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), placeholder="johndoe") }}
+                <small class="form-text text-muted">This will be your login username</small>
+                {% for error in form.username.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="john@example.com") }}
+                {% for error in form.email.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.phone.label(class="form-label") }} <span class="text-muted">(Optional)</span>
+                {{ form.phone(class="form-control", placeholder="+1 234 567 8900") }}
+            </div>
+            
+            <!-- Organization Information -->
+            <hr class="my-4">
+            <h5 class="mb-3 text-primary"><i class="bi bi-building"></i> Organization Details</h5>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Account Type</label>
+                <div class="row g-3">
+                    {% for subfield in form.account_type %}
+                    <div class="col-md-6">
+                        <div class="card h-100 border-2 account-type-card" 
+                             onclick="document.getElementById('{{ subfield.id }}').click();"
+                             style="cursor:pointer; transition: all .2s;">
+                            <div class="card-body p-3">
+                                <div class="d-flex gap-3 align-items-start">
+                                    {{ subfield(class="form-check-input mt-1 flex-shrink-0", style="pointer-events: auto;") }}
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">
+                                            {% if subfield.data == 'OWNER' %}
+                                            <i class="bi bi-star-fill text-primary"></i> Farm Owner
+                                            {% else %}
+                                            <i class="bi bi-person-badge text-info"></i> Farm Administrator
+                                            {% endif %}
+                                        </div>
+                                        <p class="mb-0 small text-muted mt-1">
+                                            {% if subfield.data == 'OWNER' %}
+                                            Full control over farms, billing, and all staff
+                                            {% else %}
+                                            Manage daily operations and staff (no billing access)
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% for error in form.account_type.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.organization_name.label(class="form-label") }}
+                {{ form.organization_name(class="form-control" + (" is-invalid" if form.organization_name.errors else ""), placeholder="Green Valley Farms") }}
+                <small class="form-text text-muted">Your farm or business name</small>
+                {% for error in form.organization_name.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.organization_slug.label(class="form-label") }}
+                {{ form.organization_slug(class="form-control" + (" is-invalid" if form.organization_slug.errors else ""), placeholder="green-valley-farms") }}
+                <small class="form-text text-muted">Unique identifier for your organization (lowercase, hyphens allowed)</small>
+                {% for error in form.organization_slug.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.country.label(class="form-label") }} <span class="text-muted">(Optional)</span>
+                {{ form.country(class="form-control", placeholder="United States") }}
+            </div>
+            
+            <!-- Security -->
+            <hr class="my-4">
+            <h5 class="mb-3 text-primary"><i class="bi bi-shield-lock"></i> Security</h5>
+            
+            <div class="mb-3">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••") }}
+                <small class="form-text text-muted">Minimum 6 characters</small>
+                {% for error in form.password.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.password2.label(class="form-label") }}
+                {{ form.password2(class="form-control" + (" is-invalid" if form.password2.errors else ""), placeholder="••••••••") }}
+                {% for error in form.password2.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <!-- Trial Info -->
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle"></i> <strong>Your Trial Includes:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>14 days free access</li>
+                    <li>Up to 50 animals</li>
+                    <li>1 farm</li>
+                    <li>Invite up to 3 team members</li>
+                    <li>All core features unlocked</li>
+                </ul>
+            </div>
+            
+            {{ form.submit(class="btn btn-success btn-lg w-100") }}
+        </form>
+        
+        <p class="text-center mt-4">
+            Already have an account? <a href="{{ url_for('auth.login') }}">Sign In</a>
+        </p>
+        
+        <p class="text-center text-muted small mt-3">
+            By signing up, you agree to our Terms of Service and Privacy Policy.<br>
+            No credit card required for trial.
+        </p>
+    </div>
+</div>
+
+<style>
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem 1rem;
+}
+.login-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.account-type-card {
+    transition: all 0.2s ease;
+    border-color: #dee2e6;
+    user-select: none;
+}
+.account-type-card:hover {
+    border-color: #198754;
+    box-shadow: 0 2px 8px rgba(25, 135, 84, 0.2);
+}
+.account-type-card.selected {
+    border-color: #198754 !important;
+    background: #f0fff4;
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const cards = document.querySelectorAll('.account-type-card');
+    const radios = document.querySelectorAll('.account-type-card input[type=radio]');
+    
+    function updateCardSelection() {
+        cards.forEach(card => {
+            const radio = card.querySelector('input[type=radio]');
+            if (radio && radio.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+    }
+    
+    // Initial update
+    updateCardSelection();
+    
+    // Listen for changes on radio buttons
+    radios.forEach(radio => {
+        radio.addEventListener('change', updateCardSelection);
+    });
+    
+    // Card click handler is now in onclick attribute
+});
+</script>
+{% endblock %}

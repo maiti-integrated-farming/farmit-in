@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}No Farm Access - FarmIt{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-shield-lock" style="font-size: 4rem; color: #ffc107;"></i>
+                    </div>
+                    
+                    <h2 class="mb-3">Welcome to FarmIt!</h2>
+                    
+                    <p class="text-muted mb-4">
+                        Your account has been created successfully, but you haven't been assigned to any farms yet.
+                    </p>
+                    
+                    <div class="alert alert-info text-start">
+                        <strong>What's Next?</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Your organization administrator will assign you to one or more farms</li>
+                            <li>Once assigned, you'll be able to access the farm dashboard and features</li>
+                            <li>You'll receive a notification when your access is granted</li>
+                        </ul>
+                    </div>
+                    
+                    {% if current_user.organization %}
+                    <div class="card bg-light mt-4">
+                        <div class="card-body">
+                            <h6 class="card-title">Your Organization</h6>
+                            <p class="mb-0">
+                                <i class="bi bi-building"></i> 
+                                <strong>{{ current_user.organization.name }}</strong>
+                            </p>
+                            {% if current_user.organization.business_email %}
+                            <p class="mb-0 text-muted small">
+                                <i class="bi bi-envelope"></i> {{ current_user.organization.business_email }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <p class="text-muted small">
+                            If you believe this is an error, please contact your organization administrator.
+                        </p>
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Customers{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between">
+    <h4>Customers</h4>
+    <a href="{{ url_for('commercial.add_customer') }}" class="btn btn-farm btn-sm">Add Customer</a>
+</div>
+<div class="card">
+    <table class="table mb-0">
+        <thead><tr><th>Name</th><th>Phone</th><th>Address</th></tr></thead>
+        <tbody>
+            {% for c in customers %}
+            <tr>
+                <td>{{ c.name }}</td>
+                <td>{{ c.phone or '—' }}</td>
+                <td>{{ c.address or '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center text-muted">No customers</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

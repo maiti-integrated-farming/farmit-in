@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FarmIt{% endblock %} | Farm Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root { --farm-green: #2d6a4f; --farm-light: #d8f3dc; --farm-dark: #1b4332; }
+        body { background: #f8faf9; min-height: 100vh; }
+        .navbar-brand { font-weight: 700; color: var(--farm-green) !important; }
+        .sidebar { min-height: calc(100vh - 56px); background: var(--farm-dark); color: #fff; }
+        .sidebar .nav-link { color: rgba(255,255,255,0.8); border-radius: 0.375rem; margin: 2px 8px; padding: 0.5rem 1rem; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,0.12); color: #fff; }
+        .sidebar .nav-link i { width: 1.4rem; }
+        .stat-card { border: none; border-radius: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.15s; }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+        .table th { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: #6c757d; }
+        .badge-status-ACTIVE { background: #198754; }
+        .badge-status-PREGNANT { background: #0d6efd; }
+        .badge-status-SICK { background: #dc3545; }
+        .badge-status-SOLD { background: #6c757d; }
+        .badge-status-QUARANTINE { background: #fd7e14; }
+        .content-wrapper { padding: 1.5rem; }
+        .page-header { margin-bottom: 1.5rem; }
+        .btn-farm { background: var(--farm-green); border-color: var(--farm-green); color: #fff; }
+        .btn-farm:hover { background: var(--farm-dark); border-color: var(--farm-dark); color: #fff; }
+        .login-page { min-height: 100vh; background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%); display: flex; align-items: center; justify-content: center; }
+        .login-card { border: none; border-radius: 1rem; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{# =========================================================
+   UNAUTHENTICATED — login / register use {% block fullpage %}
+   ========================================================= #}
+{% if not current_user.is_authenticated %}
+
+{% block fullpage %}{% endblock %}
+
+{# =========================================================
+   AUTHENTICATED + FARM SELECTED — full sidebar layout
+   ========================================================= #}
+{% elif current_farm %}
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('main.dashboard') }}">
+            <i class="bi bi-flower1"></i> FarmIt
+        </a>
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                <i class="bi bi-geo-alt"></i> {{ current_farm.name }}
+            </span>
+            {% if user_role %}
+            <span class="badge bg-secondary-subtle text-secondary">{{ user_role.name }}</span>
+            {% endif %}
+            <div class="dropdown">
+                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle"></i> {{ current_user.full_name }}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    {% if current_user.is_organization_owner or current_user.is_organization_admin %}
+                    <li><a class="dropdown-item" href="{{ url_for('organization.settings') }}"><i class="bi bi-building"></i> Organization Settings</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% endif %}
+                    {% if current_user.is_platform_admin %}
+                    <li><a class="dropdown-item" href="{{ url_for('platform_admin.dashboard') }}"><i class="bi bi-shield-lock"></i> Platform Admin</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% endif %}
+                    <li><a class="dropdown-item" href="{{ url_for('main.select_farm') }}"><i class="bi bi-arrow-left-right"></i> Switch Farm</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+<div class="container-fluid">
+    <div class="row">
+        <nav class="col-md-2 col-lg-2 d-none d-md-block sidebar py-3">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'animals' in request.endpoint %}active{% endif %}" href="{{ url_for('animals.list_animals') }}">
+                        <i class="bi bi-piggy-bank"></i> Animals
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'breeding' in request.endpoint %}active{% endif %}" href="{{ url_for('breeding.list_breeding') }}">
+                        <i class="bi bi-heart"></i> Breeding
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'milking' in request.endpoint %}active{% endif %}" href="{{ url_for('milking.list_milking_records') }}">
+                        <i class="bi bi-droplet"></i> Milking
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'health' in request.endpoint %}active{% endif %}" href="{{ url_for('health.list_vaccinations') }}">
+                        <i class="bi bi-heart-pulse"></i> Health
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'feed' in request.endpoint %}active{% endif %}" href="{{ url_for('feed.list_feeds') }}">
+                        <i class="bi bi-basket"></i> Feed
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'commercial' in request.endpoint %}active{% endif %}" href="{{ url_for('commercial.list_expenses') }}">
+                        <i class="bi bi-cash-stack"></i> Commercial
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'staff' in request.endpoint %}active{% endif %}" href="{{ url_for('staff.list_staff') }}">
+                        <i class="bi bi-people"></i> Staff
+                    </a>
+                </li>
+                <li class="nav-item mt-2">
+                    <a class="nav-link {% if 'admin' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.farm_settings') }}">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <main class="col-md-10 col-lg-10 content-wrapper">
+            {% include '_flash_messages.html' %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+{# =========================================================
+   AUTHENTICATED + NO FARM — onboarding / org settings / platform admin
+   Uses self.content() to render the single content block above
+   ========================================================= #}
+{% else %}
+
+<nav class="navbar navbar-light bg-white border-bottom sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <i class="bi bi-flower1"></i> FarmIt
+        </a>
+        <div class="d-flex align-items-center gap-3">
+            {% if current_user.organization and not current_user.organization.setup_completed %}
+            <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Setup in Progress</span>
+            {% endif %}
+            <div class="dropdown">
+                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle"></i> {{ current_user.full_name }}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    {% if current_user.is_organization_owner or current_user.is_organization_admin %}
+                    <li><a class="dropdown-item" href="{{ url_for('organization.settings') }}"><i class="bi bi-building"></i> Organization Settings</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% endif %}
+                    {% if current_user.is_platform_admin %}
+                    <li><a class="dropdown-item" href="{{ url_for('platform_admin.dashboard') }}"><i class="bi bi-shield-lock"></i> Platform Admin</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% endif %}
+                    <li><a class="dropdown-item" href="{{ url_for('main.select_farm') }}"><i class="bi bi-arrow-left-right"></i> Select Farm</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+<div class="container-fluid">
+    <div class="row">
+        <main class="col-12 content-wrapper">
+            {% include '_flash_messages.html' %}
+            {{ self.content() }}
+        </main>
+    </div>
+</div>
+
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

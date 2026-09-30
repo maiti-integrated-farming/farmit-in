@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Organizations - Platform Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-building"></i> Organizations</h2>
+                    <p class="text-muted">Manage all platform organizations</p>
+                </div>
+                <a href="{{ url_for('platform_admin.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="search" class="form-control" placeholder="Search by name or slug..." 
+                           value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="TRIAL" {{ 'selected' if request.args.get('status') == 'TRIAL' }}>Trial</option>
+                        <option value="ACTIVE" {{ 'selected' if request.args.get('status') == 'ACTIVE' }}>Active</option>
+                        <option value="EXPIRED" {{ 'selected' if request.args.get('status') == 'EXPIRED' }}>Expired</option>
+                        <option value="CANCELLED" {{ 'selected' if request.args.get('status') == 'CANCELLED' }}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="plan" class="form-select">
+                        <option value="">All Plans</option>
+                        {% for plan in subscription_plans %}
+                        <option value="{{ plan.id }}">{{ plan.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ url_for('platform_admin.organizations') }}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Clear Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Organizations Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-list"></i> All Organizations ({{ organizations|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Slug</th>
+                            <th>Owner</th>
+                            <th>Status</th>
+                            <th>Plan</th>
+                            <th>Farms</th>
+                            <th>Users</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for org in organizations %}
+                        <tr>
+                            <td>#{{ org.id }}</td>
+                            <td>
+                                <a href="{{ url_for('platform_admin.organization_detail', org_id=org.id) }}">
+                                    <strong>{{ org.name }}</strong>
+                                </a>
+                            </td>
+                            <td><code>{{ org.slug }}</code></td>
+                            <td>{{ org.owner.full_name }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if org.subscription_status == 'ACTIVE' else 'warning' if org.subscription_status == 'TRIAL' else 'danger' }}">
+                                    {{ org.subscription_status }}
+                                </span>
+                            </td>
+                            <td>{{ org.current_plan }}</td>
+                            <td>{{ org.farms.count() }} / {{ org.max_farms }}</td>
+                            <td>{{ org.users.count() }} / {{ org.max_staff }}</td>
+                            <td>{{ org.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('platform_admin.organization_detail', org_id=org.id) }}" 
+                                       class="btn btn-outline-primary" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button class="btn btn-outline-warning" title="Suspend" 
+                                            onclick="return confirm('Suspend this organization?')">
+                                        <i class="bi bi-pause-circle"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

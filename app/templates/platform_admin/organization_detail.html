@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}Organization Details - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-building"></i> {{ organization.name }}</h2>
+                    <p class="text-muted">Organization #{{ organization.id }}</p>
+                </div>
+                <a href="{{ url_for('platform_admin.organizations') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Organizations
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Organization Info -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Organization Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Name:</strong> {{ organization.name }}</p>
+                            <p><strong>Slug:</strong> <code>{{ organization.slug }}</code></p>
+                            <p><strong>Owner:</strong> {{ organization.owner.full_name }}</p>
+                            <p><strong>Owner Email:</strong> {{ organization.owner.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-{{ 'success' if organization.is_active else 'danger' }}">
+                                    {{ 'Active' if organization.is_active else 'Inactive' }}
+                                </span>
+                            </p>
+                            <p><strong>Created:</strong> {{ organization.created_at.strftime('%B %d, %Y') }}</p>
+                            <p><strong>Last Updated:</strong> {{ organization.updated_at.strftime('%B %d, %Y') }}</p>
+                        </div>
+                    </div>
+                    {% if organization.address %}
+                    <hr>
+                    <p><strong>Address:</strong><br>{{ organization.address }}</p>
+                    {% endif %}
+                    {% if organization.contact_email or organization.contact_phone %}
+                    <p>
+                        {% if organization.contact_email %}<strong>Email:</strong> {{ organization.contact_email }}<br>{% endif %}
+                        {% if organization.contact_phone %}<strong>Phone:</strong> {{ organization.contact_phone }}{% endif %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Subscription Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-credit-card"></i> Subscription Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-{{ 'success' if organization.subscription_status == 'ACTIVE' else 'warning' }}">
+                                    {{ organization.subscription_status }}
+                                </span>
+                            </p>
+                            <p><strong>Current Plan:</strong> {{ organization.current_plan or 'Trial' }}</p>
+                            {% if organization.trial_ends_at %}
+                            <p><strong>Trial Ends:</strong> {{ organization.trial_ends_at.strftime('%B %d, %Y') }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if organization.subscription_start_date %}
+                            <p><strong>Started:</strong> {{ organization.subscription_start_date.strftime('%B %d, %Y') }}</p>
+                            {% endif %}
+                            {% if organization.subscription_end_date %}
+                            <p><strong>Ends:</strong> {{ organization.subscription_end_date.strftime('%B %d, %Y') }}</p>
+                            {% endif %}
+                            <p><strong>Auto Renew:</strong> {{ 'Yes' if organization.auto_renew else 'No' }}</p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6>Resource Limits</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Farms:</strong> {{ usage.farms }} / {{ organization.max_farms }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Animals:</strong> {{ usage.animals }} / {{ organization.max_animals }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Staff:</strong> {{ usage.staff }} / {{ organization.max_staff }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Farms -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Farms ({{ farms|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if farms %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Code</th>
+                                    <th>Status</th>
+                                    <th>Animals</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for farm in farms %}
+                                <tr>
+                                    <td>{{ farm.name }}</td>
+                                    <td><code>{{ farm.code }}</code></td>
+                                    <td>{{ farm.status }}</td>
+                                    <td>{{ farm.animals.count() }}</td>
+                                    <td>{{ farm.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No farms created yet</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Users -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Team Members ({{ users|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>
+                                        {{ user.full_name }}
+                                        {% if user.is_organization_owner %}
+                                        <span class="badge bg-danger">Owner</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                            {{ 'Active' if user.is_active else 'Inactive' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ user.date_joined.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Actions -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-white">
+                    <h6 class="mb-0"><i class="bi bi-tools"></i> Admin Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <form method="POST" action="{{ url_for('platform_admin.suspend_organization', org_id=organization.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline-warning w-100"
+                                    onclick="return confirm('Suspend this organization?')">
+                                <i class="bi bi-pause-circle"></i> Suspend Organization
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('platform_admin.activate_organization', org_id=organization.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline-success w-100">
+                                <i class="bi bi-play-circle"></i> Activate Organization
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('platform_admin.extend_trial', org_id=organization.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="days" value="14">
+                            <button type="submit" class="btn btn-outline-info w-100">
+                                <i class="bi bi-clock-history"></i> Extend Trial (+14 days)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item px-0">
+                            <small class="text-muted">{{ organization.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            <p class="mb-0 small">Organization created</p>
+                        </div>
+                        {% if organization.subscription_start_date %}
+                        <div class="list-group-item px-0">
+                            <small class="text-muted">{{ organization.subscription_start_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                            <p class="mb-0 small">Subscription started</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

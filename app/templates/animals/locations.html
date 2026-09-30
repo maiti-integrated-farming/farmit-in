@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Locations{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between">
+    <h4>Locations / Sheds</h4>
+    <a href="{{ url_for('animals.add_location') }}" class="btn btn-farm btn-sm">Add Location</a>
+</div>
+<div class="card">
+    <table class="table mb-0">
+        <thead><tr><th>Name</th><th>Capacity</th><th>Description</th><th>Active</th></tr></thead>
+        <tbody>
+            {% for l in locations %}
+            <tr>
+                <td>{{ l.name }}</td>
+                <td>{{ l.capacity or '—' }}</td>
+                <td>{{ l.description or '—' }}</td>
+                <td>{% if l.is_active %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted">No locations</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Medication Templates{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3>Medication Templates</h3>
+                    <div>
+                        <a href="{{ url_for('health.list_enhanced_treatments') }}" class="btn btn-secondary me-2">
+                            <i class="fas fa-arrow-left"></i> Back to Treatments
+                        </a>
+                        <a href="{{ url_for('health.add_medication_template') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Template
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Pre-configure common medications for quick treatment entry</p>
+
+                    <!-- Filter by Category -->
+                    <div class="mb-3">
+                        <label>Filter by Category:</label>
+                        <select class="form-control w-25" onchange="filterTemplates(this.value)">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.name }}">{{ cat.name|replace('_', ' ')|title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Templates Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="templatesTable">
+                            <thead>
+                                <tr>
+                                    <th>Medication Name</th>
+                                    <th>Brand Name</th>
+                                    <th>Category</th>
+                                    <th>Default Dosage</th>
+                                    <th>Route</th>
+                                    <th>Frequency</th>
+                                    <th>Withdrawal (days)</th>
+                                    <th>Active</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for template in templates %}
+                                <tr data-category="{{ template.category.name if template.category else '' }}">
+                                    <td>
+                                        <strong>{{ template.medication_name }}</strong>
+                                        {% if template.active_ingredient %}
+                                        <br><small class="text-muted">{{ template.active_ingredient }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ template.brand_name if template.brand_name else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ template.category.color if template.category else 'secondary' }}">
+                                            {{ template.category.name|replace('_', ' ')|title if template.category else 'N/A' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ template.default_dosage }} {{ template.dosage_unit }}</td>
+                                    <td>{{ template.route_of_administration if template.route_of_administration else 'N/A' }}</td>
+                                    <td>{{ template.frequency if template.frequency else 'N/A' }}</td>
+                                    <td>
+                                        {% if template.withdrawal_period_days %}
+                                        <span class="badge bg-warning">{{ template.withdrawal_period_days }} days</span>
+                                        {% else %}
+                                        None
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if template.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-info" onclick="viewTemplate({{ template.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <a href="{{ url_for('health.add_medication_template', id=template.id) }}" class="btn btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('health.delete_medication_template', id=template.id) }}" style="display:inline;" onsubmit="return confirm('Delete this template?');">
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">No medication templates found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template Detail Modal -->
+<div class="modal fade" id="templateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Medication Template Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="templateDetails">
+                <!-- Content loaded via JS -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterTemplates(category) {
+    const rows = document.querySelectorAll('#templatesTable tbody tr');
+    rows.forEach(row => {
+        if (!category || row.dataset.category === category) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function viewTemplate(id) {
+    // Load template details via AJAX
+    fetch(`/health/medication-template/${id}/details`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('templateDetails').innerHTML = formatTemplateDetails(data);
+            new bootstrap.Modal(document.getElementById('templateModal')).show();
+        })
+        .catch(error => {
+            alert('Error loading template details');
+        });
+}
+
+function formatTemplateDetails(data) {
+    return `
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h6>Medication Information</h6>
+                <p><strong>Name:</strong> ${data.medication_name}<br>
+                <strong>Brand:</strong> ${data.brand_name || 'N/A'}<br>
+                <strong>Active Ingredient:</strong> ${data.active_ingredient || 'N/A'}<br>
+                <strong>Category:</strong> ${data.category}</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Dosage Information</h6>
+                <p><strong>Default Dosage:</strong> ${data.dosage}<br>
+                <strong>Route:</strong> ${data.route || 'N/A'}<br>
+                <strong>Frequency:</strong> ${data.frequency || 'N/A'}</p>
+            </div>
+        </div>
+        <hr>
+        <div class="row mb-3">
+            <div class="col-12">
+                <h6>Indications</h6>
+                <p>${data.indications || 'Not specified'}</p>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-12">
+                <h6>Contraindications</h6>
+                <p>${data.contraindications || 'None specified'}</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Withdrawal Period:</strong> ${data.withdrawal_period || 'None'}<br>
+                <strong>Requires Prescription:</strong> ${data.requires_prescription ? 'Yes' : 'No'}
+            </div>
+            <div class="col-md-6">
+                <strong>Storage:</strong> ${data.storage_requirements || 'Standard'}<br>
+                <strong>Cost per Unit:</strong> $${data.cost_per_unit || 'N/A'}
+            </div>
+        </div>
+    `;
+}
+</script>
+{% endblock %}

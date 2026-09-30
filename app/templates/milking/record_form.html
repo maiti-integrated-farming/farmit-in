@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if record else 'Add' }} Milking Record{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ 'Edit' if record else 'Add' }} Milking Record</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <!-- Animal Selection -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.animal.label }} <span class="text-danger">*</span></label>
+                                {{ form.animal(class="form-control" + (" is-invalid" if form.animal.errors else "")) }}
+                                {% if form.animal.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.animal.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Select a female animal for milking</small>
+                            </div>
+
+                            <!-- Milking Date -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.milking_date.label }} <span class="text-danger">*</span></label>
+                                {{ form.milking_date(class="form-control" + (" is-invalid" if form.milking_date.errors else ""), type="date") }}
+                                {% if form.milking_date.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.milking_date.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Session -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.session.label }} <span class="text-danger">*</span></label>
+                                {{ form.session(class="form-control" + (" is-invalid" if form.session.errors else "")) }}
+                                {% if form.session.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.session.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Quantity -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.quantity.label }} (Liters) <span class="text-danger">*</span></label>
+                                {{ form.quantity(class="form-control" + (" is-invalid" if form.quantity.errors else ""), step="0.01", min="0") }}
+                                {% if form.quantity.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.quantity.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Quality Score -->
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.quality_score.label }}</label>
+                                {{ form.quality_score(class="form-control", min="1", max="10", step="0.1") }}
+                                <small class="form-text text-muted">Scale 1-10 (optional)</small>
+                            </div>
+
+                            <!-- Fat Content -->
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.fat_content.label }} (%)</label>
+                                {{ form.fat_content(class="form-control", step="0.1", min="0", max="100") }}
+                                <small class="form-text text-muted">Optional</small>
+                            </div>
+
+                            <!-- Protein Content -->
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.protein_content.label }} (%)</label>
+                                {{ form.protein_content(class="form-control", step="0.1", min="0", max="100") }}
+                                <small class="form-text text-muted">Optional</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Milker -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.milker_id.label }}</label>
+                                {{ form.milker_id(class="form-control") }}
+                                <small class="form-text text-muted">Who performed the milking</small>
+                            </div>
+
+                            <!-- Milking Duration -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.milking_duration.label }} (minutes)</label>
+                                {{ form.milking_duration(class="form-control", min="0") }}
+                                <small class="form-text text-muted">Optional</small>
+                            </div>
+                        </div>
+
+                        <!-- Temperature -->
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.temperature.label }} (°C)</label>
+                            {{ form.temperature(class="form-control", step="0.1") }}
+                            <small class="form-text text-muted">Milk temperature at collection</small>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.notes.label }}</label>
+                            {{ form.notes(class="form-control", rows="3") }}
+                            <small class="form-text text-muted">Any observations or issues</small>
+                        </div>
+
+                        <!-- Abnormalities Checkbox -->
+                        <div class="mb-3 form-check">
+                            {{ form.abnormalities_detected(class="form-check-input") }}
+                            <label class="form-check-label" for="abnormalities_detected">
+                                {{ form.abnormalities_detected.label.text }}
+                            </label>
+                            <small class="form-text text-muted d-block">Check if any issues were observed (blood, pus, discoloration, etc.)</small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('milking.list_milking_records') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ 'Update' if record else 'Save' }} Record
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-set today's date if adding new record
+document.addEventListener('DOMContentLoaded', function() {
+    const dateField = document.getElementById('milking_date');
+    if (dateField && !dateField.value) {
+        dateField.value = new Date().toISOString().split('T')[0];
+    }
+});
+</script>
+{% endblock %}

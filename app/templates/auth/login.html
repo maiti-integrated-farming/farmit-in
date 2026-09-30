@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block fullpage %}
+<div class="login-page">
+    <div class="card login-card p-4" style="width: 100%; max-width: 420px;">
+        <div class="text-center mb-4">
+            <h2 class="text-success"><i class="bi bi-flower1"></i> FarmIt</h2>
+            <p class="text-muted">Farm Management Platform</p>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-control", placeholder="Username") }}
+            </div>
+            <div class="mb-3">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control", placeholder="Password") }}
+            </div>
+            <div class="mb-3 form-check">
+                {{ form.remember(class="form-check-input") }}
+                {{ form.remember.label(class="form-check-label") }}
+            </div>
+            {{ form.submit(class="btn btn-farm w-100") }}
+        </form>
+        <p class="text-center mt-3 mb-0">
+            <small>Demo: <code>owner</code> / <code>owner123</code> or <code>staff1</code> / <code>staff123</code></small>
+        </p>
+        <p class="text-center mt-2">
+            <a href="{{ url_for('auth.register') }}">Create an account</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

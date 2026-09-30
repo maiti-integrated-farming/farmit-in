@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Animal Sales{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between">
+    <h4>Animal Sales</h4>
+    <a href="{{ url_for('commercial.add_sale') }}" class="btn btn-farm btn-sm">Record Sale</a>
+</div>
+<div class="card">
+    <table class="table mb-0">
+        <thead><tr><th>Date</th><th>Animal</th><th>Buyer</th><th>Weight</th><th>Amount</th><th>Mode</th></tr></thead>
+        <tbody>
+            {% for s in sales %}
+            <tr>
+                <td>{{ s.sale_date }}</td>
+                <td>{{ s.animal.tag_no if s.animal else '—' }}</td>
+                <td>{{ s.buyer.name if s.buyer else '—' }}</td>
+                <td>{{ s.live_weight or '—' }}</td>
+                <td>₹{{ s.total_amount }}</td>
+                <td>{{ s.payment_mode }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted">No sales</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

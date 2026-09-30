@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if treatment else 'Add' }} Treatment{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ 'Edit' if treatment else 'Add' }} Treatment Record</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Basic Information -->
+                        <h5 class="mb-3">Basic Information</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.animal.label }} <span class="text-danger">*</span></label>
+                                {{ form.animal(class="form-control" + (" is-invalid" if form.animal.errors else "")) }}
+                                {% if form.animal.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.animal.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.treatment_date.label }} <span class="text-danger">*</span></label>
+                                {{ form.treatment_date(class="form-control" + (" is-invalid" if form.treatment_date.errors else ""), type="date") }}
+                                {% if form.treatment_date.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.treatment_date.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.category.label }} <span class="text-danger">*</span></label>
+                                {{ form.category(class="form-control" + (" is-invalid" if form.category.errors else ""), onchange="updateCategoryFields()") }}
+                                {% if form.category.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.category.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.status.label }}</label>
+                                {{ form.status(class="form-control") }}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Medication Information -->
+                        <h5 class="mb-3">Medication Information</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.medication_name.label }} <span class="text-danger">*</span></label>
+                                {{ form.medication_name(class="form-control" + (" is-invalid" if form.medication_name.errors else ""), list="medication-list") }}
+                                <datalist id="medication-list">
+                                    {% for template in medication_templates %}
+                                    <option value="{{ template.medication_name }}">{{ template.brand_name }}</option>
+                                    {% endfor %}
+                                </datalist>
+                                {% if form.medication_name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.medication_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.brand_name.label }}</label>
+                                {{ form.brand_name(class="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.dosage.label }} <span class="text-danger">*</span></label>
+                                {{ form.dosage(class="form-control" + (" is-invalid" if form.dosage.errors else "")) }}
+                                {% if form.dosage.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.dosage.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.dosage_unit.label }}</label>
+                                {{ form.dosage_unit(class="form-control") }}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.route.label }}</label>
+                                {{ form.route(class="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.frequency.label }}</label>
+                                {{ form.frequency(class="form-control") }}
+                                <small class="form-text text-muted">e.g., "Once daily", "Every 12 hours"</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.duration_days.label }}</label>
+                                {{ form.duration_days(class="form-control", min="0") }}
+                                <small class="form-text text-muted">Treatment duration in days</small>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Veterinarian & Cost -->
+                        <h5 class="mb-3">Provider & Cost</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.veterinarian_name.label }}</label>
+                                {{ form.veterinarian_name(class="form-control") }}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.veterinarian_license.label }}</label>
+                                {{ form.veterinarian_license(class="form-control") }}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.cost.label }}</label>
+                                {{ form.cost(class="form-control", step="0.01", min="0") }}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Follow-up & Scheduling -->
+                        <h5 class="mb-3">Follow-up & Scheduling</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.next_due_date.label }}</label>
+                                {{ form.next_due_date(class="form-control", type="date") }}
+                                <small class="form-text text-muted">For recurring treatments (deworming, vitamins, etc.)</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.withdrawal_period_days.label }}</label>
+                                {{ form.withdrawal_period_days(class="form-control", min="0") }}
+                                <small class="form-text text-muted">Days before milk/meat can be sold</small>
+                            </div>
+                        </div>
+
+                        <!-- Checkboxes -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.is_critical(class="form-check-input") }}
+                                    <label class="form-check-label" for="is_critical">
+                                        {{ form.is_critical.label.text }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.requires_prescription(class="form-check-input") }}
+                                    <label class="form-check-label" for="requires_prescription">
+                                        {{ form.requires_prescription.label.text }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.is_recurring(class="form-check-input") }}
+                                    <label class="form-check-label" for="is_recurring">
+                                        {{ form.is_recurring.label.text }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Additional Information -->
+                        <h5 class="mb-3">Additional Information</h5>
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.symptoms.label }}</label>
+                            {{ form.symptoms(class="form-control", rows="2") }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.diagnosis.label }}</label>
+                            {{ form.diagnosis(class="form-control", rows="2") }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.notes.label }}</label>
+                            {{ form.notes(class="form-control", rows="3") }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.side_effects.label }}</label>
+                            {{ form.side_effects(class="form-control", rows="2") }}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('health.list_enhanced_treatments') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ 'Update' if treatment else 'Save' }} Treatment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-fill from medication templates
+document.getElementById('medication_name').addEventListener('change', function() {
+    const templates = {{ medication_templates|tojson }};
+    const selected = templates.find(t => t.medication_name === this.value);
+    if (selected) {
+        document.getElementById('brand_name').value = selected.brand_name || '';
+        document.getElementById('dosage').value = selected.default_dosage || '';
+        document.getElementById('dosage_unit').value = selected.dosage_unit || '';
+        document.getElementById('route').value = selected.route_of_administration || '';
+        document.getElementById('frequency').value = selected.frequency || '';
+    }
+});
+
+// Auto-set today's date if adding new
+document.addEventListener('DOMContentLoaded', function() {
+    const dateField = document.getElementById('treatment_date');
+    if (dateField && !dateField.value) {
+        dateField.value = new Date().toISOString().split('T')[0];
+    }
+});
+
+function updateCategoryFields() {
+    const category = document.getElementById('category').selectedOptions[0].text.toLowerCase();
+    // Could show/hide category-specific fields here
+}
+</script>
+{% endblock %}

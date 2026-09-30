@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header"><h4>{{ title }}</h4></div>
+<div class="card"><div class="card-body">
+<p class="text-muted small">User must already be registered on the platform. Enter their username and assign a role.</p>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">{{ form.username.label(class="form-label") }}{{ form.username(class="form-control") }}</div>
+    <div class="mb-3">{{ form.role_id.label(class="form-label") }}{{ form.role_id(class="form-select") }}</div>
+    <div class="mb-3">{{ form.staff_code.label(class="form-label") }}{{ form.staff_code(class="form-control") }}</div>
+    <div class="mb-3">{{ form.designation.label(class="form-label") }}{{ form.designation(class="form-control") }}</div>
+    <div class="mb-3">{{ form.joining_date.label(class="form-label") }}{{ form.joining_date(class="form-control") }}</div>
+    <div class="mb-3">{{ form.remarks.label(class="form-label") }}{{ form.remarks(class="form-control", rows=2) }}</div>
+    {{ form.submit(class="btn btn-farm") }}
+    <a href="{{ url_for('staff.list_staff') }}" class="btn btn-outline-secondary">Cancel</a>
+</form>
+</div></div>
+{% endblock %}

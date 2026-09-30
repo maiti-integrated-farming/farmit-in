@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Organization Profile - FarmIt{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-building"></i> Edit Organization Profile</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-4">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control form-control-lg" + (" is-invalid" if form.name.errors else "")) }}
+                            {% for error in form.name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form.slug.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">farmit.com/</span>
+                                {{ form.slug(class="form-control" + (" is-invalid" if form.slug.errors else "")) }}
+                            </div>
+                            <small class="form-text text-muted">Used for custom URLs (letters, numbers, hyphens only)</small>
+                            {% for error in form.slug.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form.contact_email.label(class="form-label") }}
+                            {{ form.contact_email(class="form-control", placeholder="contact@yourfarm.com") }}
+                            <small class="form-text text-muted">Public contact email for your organization</small>
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form.contact_phone.label(class="form-label") }}
+                            {{ form.contact_phone(class="form-control", placeholder="+1 234 567 8900") }}
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form.address.label(class="form-label") }}
+                            {{ form.address(class="form-control", rows="3") }}
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Organization ID:</strong> #{{ organization.id }}</p>
+                                <p><strong>Created:</strong> {{ organization.created_at.strftime('%B %d, %Y') }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Owner:</strong> {{ organization.owner.full_name }}</p>
+                                <p><strong>Members:</strong> {{ organization.members|length }}</p>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('organization.settings') }}" class="text-muted">
+                            <i class="bi bi-arrow-left"></i> Back to Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

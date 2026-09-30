@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Setup Wizard - FarmIt{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <!-- Header -->
+                    <div class="text-center mb-5">
+                        <div class="mb-3">
+                            <i class="bi bi-rocket-takeoff" style="font-size: 4rem; color: #28a745;"></i>
+                        </div>
+                        <h2 class="mb-2">Welcome to FarmIt, {{ current_user.first_name }}! 🎉</h2>
+                        <p class="text-muted">Let's get your farm management system set up</p>
+                    </div>
+
+                    <!-- Setup Progress -->
+                    <div class="mb-5">
+                        <h5 class="mb-3">Setup Progress</h5>
+                        <div class="progress" style="height: 25px;">
+                            {% if has_farm %}
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%;">
+                                Setup Complete ✓
+                            </div>
+                            {% else %}
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: 50%;">
+                                50% Complete
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Organization Details -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="bi bi-building text-success"></i> Your Organization
+                            </h5>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>Name:</strong> {{ organization.name }}</p>
+                                    <p class="mb-2"><strong>Plan:</strong> 
+                                        <span class="badge bg-primary">{{ organization.subscription_status }}</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>Trial Ends:</strong> {{ organization.trial_ends_at.strftime('%B %d, %Y') if organization.trial_ends_at else 'N/A' }}</p>
+                                    <p class="mb-2"><strong>Max Farms:</strong> {{ organization.max_farms }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Setup Steps -->
+                    <div class="mb-4">
+                        <h5 class="mb-4">Setup Checklist</h5>
+                        
+                        <!-- Step 1: Create Farm -->
+                        <div class="card mb-3 {% if has_farm %}border-success{% endif %}">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        {% if has_farm %}
+                                        <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                                        {% else %}
+                                        <i class="bi bi-circle text-muted" style="font-size: 2rem;"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1">
+                                            <strong>Step 1:</strong> Create Your First Farm
+                                        </h6>
+                                        <p class="text-muted mb-0">Set up your farm details and locations</p>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        {% if has_farm %}
+                                        <span class="badge bg-success">Complete</span>
+                                        {% else %}
+                                        <a href="{{ url_for('onboarding.setup_farm') }}" class="btn btn-primary">
+                                            <i class="bi bi-arrow-right"></i> Start
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Invite Team (Optional) -->
+                        <div class="card mb-3 {% if has_farm %}border-success{% endif %}">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-people text-info" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1">
+                                            <strong>Step 2:</strong> Invite Your Team <span class="badge bg-secondary">Optional</span>
+                                        </h6>
+                                        <p class="text-muted mb-0">Add staff members to help manage your farm</p>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        {% if has_farm %}
+                                        <a href="{{ url_for('organization.invite_user') }}" class="btn btn-outline-primary">
+                                            <i class="bi bi-person-plus"></i> Invite
+                                        </a>
+                                        {% else %}
+                                        <button class="btn btn-outline-secondary" disabled>Locked</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Add Animals (Optional) -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-heart text-danger" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1">
+                                            <strong>Step 3:</strong> Add Your First Animals <span class="badge bg-secondary">Optional</span>
+                                        </h6>
+                                        <p class="text-muted mb-0">Start tracking your livestock</p>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        {% if has_farm %}
+                                        <a href="{{ url_for('animals.add_animal') }}" class="btn btn-outline-primary">
+                                            <i class="bi bi-plus-circle"></i> Add
+                                        </a>
+                                        {% else %}
+                                        <button class="btn btn-outline-secondary" disabled>Locked</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="text-center mt-5">
+                        {% if has_farm %}
+                        <a href="{{ url_for('onboarding.setup_complete') }}" class="btn btn-success btn-lg px-5">
+                            <i class="bi bi-check-circle"></i> Complete Setup & Go to Dashboard
+                        </a>
+                        <p class="text-muted mt-3 small">You can always invite team members and add animals later</p>
+                        {% else %}
+                        <a href="{{ url_for('onboarding.setup_farm') }}" class="btn btn-primary btn-lg px-5">
+                            <i class="bi bi-arrow-right"></i> Create Your Farm
+                        </a>
+                        <p class="text-muted mt-3 small">This will only take 2 minutes</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Help Section -->
+                    <div class="alert alert-info mt-5">
+                        <h6><i class="bi bi-info-circle"></i> Need Help?</h6>
+                        <p class="mb-0 small">
+                            Check out our <a href="#" class="alert-link">quick start guide</a> or 
+                            <a href="#" class="alert-link">watch the video tutorial</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

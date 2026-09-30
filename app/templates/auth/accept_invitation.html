@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Accept Invitation - FarmIt{% endblock %}
+{% block fullpage %}
+<div class="login-page">
+    <div class="card login-card p-4" style="width: 100%; max-width: 550px;">
+        <div class="text-center mb-4">
+            <h2 class="text-success"><i class="bi bi-flower1"></i> FarmIt</h2>
+            <h4 class="mb-2">Join {{ organization.name }}</h4>
+            <p class="text-muted">You've been invited to join this organization</p>
+        </div>
+        
+        {% if not invitation.is_valid() %}
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> 
+            <strong>Invalid Invitation</strong><br>
+            This invitation has expired or has already been used.
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Go to Login</a>
+        </div>
+        {% else %}
+        
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle"></i> <strong>Invitation Details:</strong>
+            <ul class="mb-0 mt-2">
+                <li><strong>Organization:</strong> {{ organization.name }}</li>
+                <li><strong>Invited by:</strong> {{ invitation.inviter.full_name }}</li>
+                <li><strong>Your email:</strong> {{ invitation.email }}</li>
+            </ul>
+        </div>
+        
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <h5 class="mb-3 text-primary"><i class="bi bi-person-circle"></i> Create Your Account</h5>
+            
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="text" class="form-control" value="{{ invitation.email }}" disabled>
+                <small class="text-muted">This is your login email</small>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), placeholder="johndoe") }}
+                <small class="form-text text-muted">Choose a unique username</small>
+                {% for error in form.username.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.first_name.label(class="form-label") }}
+                    {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else ""), placeholder="John") }}
+                    {% for error in form.first_name.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.last_name.label(class="form-label") }}
+                    {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else ""), placeholder="Doe") }}
+                    {% for error in form.last_name.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.phone.label(class="form-label") }} <span class="text-muted">(Optional)</span>
+                {{ form.phone(class="form-control", placeholder="+1 234 567 8900") }}
+            </div>
+            
+            <hr class="my-4">
+            <h5 class="mb-3 text-primary"><i class="bi bi-shield-lock"></i> Set Your Password</h5>
+            
+            <div class="mb-3">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••") }}
+                <small class="form-text text-muted">Minimum 6 characters</small>
+                {% for error in form.password.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.password2.label(class="form-label") }}
+                {{ form.password2(class="form-control" + (" is-invalid" if form.password2.errors else ""), placeholder="••••••••") }}
+                {% for error in form.password2.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            {{ form.submit(class="btn btn-success btn-lg w-100", value="Accept Invitation & Create Account") }}
+        </form>
+        
+        <p class="text-center text-muted small mt-4">
+            By accepting this invitation, you agree to join {{ organization.name }}<br>
+            and comply with FarmIt's Terms of Service.
+        </p>
+        
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem 1rem;
+}
+.login-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %}

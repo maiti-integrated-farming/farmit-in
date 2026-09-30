@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ animal.tag_no }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0">{{ animal.tag_no }} {% if animal.name %}— {{ animal.name }}{% endif %}</h4>
+        <span class="badge badge-status-{{ animal.status }}">{{ animal.status }}</span>
+    </div>
+    <a href="{{ url_for('animals.edit_animal', id=animal.id) }}" class="btn btn-farm btn-sm">Edit</a>
+</div>
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white"><strong>Details</strong></div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr><th>Gender</th><td>{{ animal.gender }}</td></tr>
+                    <tr><th>Breed</th><td>{{ animal.breed.name if animal.breed else '—' }} ({{ animal.breed.species.name if animal.breed else '' }})</td></tr>
+                    <tr><th>DOB</th><td>{{ animal.date_of_birth or '—' }}</td></tr>
+                    <tr><th>Color</th><td>{{ animal.color or '—' }}</td></tr>
+                    <tr><th>Current Weight</th><td>{{ animal.current_weight or '—' }} kg</td></tr>
+                    <tr><th>Birth Weight</th><td>{{ animal.birth_weight or '—' }} kg</td></tr>
+                    <tr><th>Source</th><td>{{ animal.source or '—' }}</td></tr>
+                    <tr><th>Location</th><td>{{ animal.location.name if animal.location else '—' }}</td></tr>
+                    <tr><th>Purchase</th><td>{{ animal.purchase_date or '—' }} {% if animal.purchase_price %}(₹{{ animal.purchase_price }}){% endif %}</td></tr>
+                    <tr><th>Remarks</th><td>{{ animal.remarks or '—' }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>Weight History</strong></div>
+            <ul class="list-group list-group-flush">
+                {% for w in weights %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ w.weight_date }}</span>
+                    <span>{{ w.weight_kg }} kg ({{ w.weight_method or '' }})</span>
+                </li>
+                {% else %}
+                <li class="list-group-item text-muted">No weight records</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+<a href="{{ url_for('animals.list_animals') }}" class="btn btn-outline-secondary btn-sm mt-3">← Back to list</a>
+{% endblock %}

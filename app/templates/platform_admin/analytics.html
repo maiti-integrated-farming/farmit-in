@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% block title %}Analytics - Platform Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-graph-up"></i> Platform Analytics</h2>
+                    <p class="text-muted">Business metrics and trends</p>
+                </div>
+                <div>
+                    <select class="form-select" id="timeRange" style="width: auto;">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="365">Last year</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Revenue</h6>
+                    <h3 class="text-success">${{ metrics.total_revenue|round(2) }}</h3>
+                    <small class="text-success">
+                        <i class="bi bi-arrow-up"></i> +{{ metrics.revenue_growth }}% vs last period
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h6 class="text-muted">New Organizations</h6>
+                    <h3 class="text-primary">{{ metrics.new_organizations }}</h3>
+                    <small class="text-success">
+                        <i class="bi bi-arrow-up"></i> +{{ metrics.org_growth }}% vs last period
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h6 class="text-muted">Active Users</h6>
+                    <h3 class="text-info">{{ metrics.active_users }}</h3>
+                    <small class="text-success">
+                        <i class="bi bi-arrow-up"></i> +{{ metrics.user_growth }}% vs last period
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted">Churn Rate</h6>
+                    <h3 class="text-warning">{{ metrics.churn_rate }}%</h3>
+                    <small class="text-{{ 'success' if metrics.churn_trend < 0 else 'danger' }}">
+                        <i class="bi bi-arrow-{{ 'down' if metrics.churn_trend < 0 else 'up' }}"></i> 
+                        {{ metrics.churn_trend|abs }}% vs last period
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Revenue Trend</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Revenue by Plan</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenuePieChart"></canvas>
+                    <div class="mt-3">
+                        {% for item in metrics.revenue_by_plan %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>{{ item.plan_name }}</span>
+                            <strong>${{ item.revenue|round(2) }}</strong>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> User Growth</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="userGrowthChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-building"></i> Organization Growth</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="orgGrowthChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conversion Funnel -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Conversion Funnel</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="funnel-stage">
+                                <h3>{{ funnel.signups }}</h3>
+                                <p class="text-muted">Sign Ups</p>
+                                <small class="text-success">100%</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="funnel-stage">
+                                <h3>{{ funnel.activated }}</h3>
+                                <p class="text-muted">Activated Trial</p>
+                                <small class="text-info">{{ (funnel.activated / funnel.signups * 100)|round(1) }}%</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="funnel-stage">
+                                <h3>{{ funnel.converted }}</h3>
+                                <p class="text-muted">Converted to Paid</p>
+                                <small class="text-warning">{{ (funnel.converted / funnel.signups * 100)|round(1) }}%</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="funnel-stage">
+                                <h3>{{ funnel.retained }}</h3>
+                                <p class="text-muted">Retained (3+ months)</p>
+                                <small class="text-success">{{ (funnel.retained / funnel.signups * 100)|round(1) }}%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Performing Organizations -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-trophy"></i> Top Organizations by Usage</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Organization</th>
+                                    <th>Plan</th>
+                                    <th>Animals</th>
+                                    <th>Users</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for org in top_organizations %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('platform_admin.organization_detail', org_id=org.id) }}">
+                                            {{ org.name }}
+                                        </a>
+                                    </td>
+                                    <td><span class="badge bg-primary">{{ org.current_plan }}</span></td>
+                                    <td>{{ org.animal_count }}</td>
+                                    <td>{{ org.user_count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> At-Risk Organizations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Organization</th>
+                                    <th>Status</th>
+                                    <th>Last Active</th>
+                                    <th>Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for org in at_risk_organizations %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('platform_admin.organization_detail', org_id=org.id) }}">
+                                            {{ org.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if org.subscription_status == 'TRIAL' else 'danger' }}">
+                                            {{ org.subscription_status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ org.last_active_date.strftime('%Y-%m-%d') if org.last_active_date else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">High</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.funnel-stage {
+    padding: 20px;
+    border-left: 3px solid #dee2e6;
+}
+.funnel-stage:first-child {
+    border-left: none;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Placeholder chart initialization - would be populated with real data from backend
+document.addEventListener('DOMContentLoaded', function() {
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_data.revenue_labels|tojson }},
+            datasets: [{
+                label: 'Revenue',
+                data: {{ chart_data.revenue_data|tojson }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        }
+    });
+    
+    // User Growth Chart
+    const userCtx = document.getElementById('userGrowthChart').getContext('2d');
+    new Chart(userCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_data.user_labels|tojson }},
+            datasets: [{
+                label: 'New Users',
+                data: {{ chart_data.user_data|tojson }},
+                backgroundColor: 'rgba(54, 162, 235, 0.5)'
+            }]
+        }
+    });
+});
+</script>
+{% endblock %}

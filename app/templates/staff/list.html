@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Staff{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between">
+    <h4>Staff Members</h4>
+    <a href="{{ url_for('staff.add_staff') }}" class="btn btn-farm btn-sm">Add Staff</a>
+</div>
+<div class="card">
+    <table class="table mb-0">
+        <thead>
+            <tr><th>Name</th><th>Username</th><th>Role</th><th>Designation</th><th>Code</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for m in memberships %}
+            <tr>
+                <td>{{ m.user.full_name }}</td>
+                <td>{{ m.user.username }}</td>
+                <td><span class="badge bg-secondary">{{ m.role.name }}</span></td>
+                <td>{{ m.designation or '—' }}</td>
+                <td>{{ m.staff_code or '—' }}</td>
+                <td>{% if m.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+                <td>
+                    {% if m.is_active %}
+                    <form method="POST" action="{{ url_for('staff.deactivate_staff', id=m.id) }}" class="d-inline" onsubmit="return confirm('Deactivate?')">
+                        <button class="btn btn-sm btn-outline-danger">Deactivate</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-center text-muted">No staff members</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

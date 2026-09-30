@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Breeding{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between">
+    <h4>Breeding Records</h4>
+    <a href="{{ url_for('breeding.add_breeding') }}" class="btn btn-farm btn-sm">Add Record</a>
+</div>
+<div class="card">
+    <table class="table mb-0">
+        <thead>
+            <tr><th>Female</th><th>Male</th><th>Mating Date</th><th>Method</th><th>Expected Delivery</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            {% for r in records %}
+            <tr>
+                <td>{{ r.female.tag_no if r.female else '—' }}</td>
+                <td>{{ r.male.tag_no if r.male else '—' }}</td>
+                <td>{{ r.mating_date or '—' }}</td>
+                <td>{{ r.mating_method or '—' }}</td>
+                <td>{{ r.expected_delivery_date or '—' }}</td>
+                <td><span class="badge bg-info">{{ r.pregnancy_status }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted">No breeding records</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

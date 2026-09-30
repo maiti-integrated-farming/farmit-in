@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if template else 'Add' }} Medication Template{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ 'Edit' if template else 'Add' }} Medication Template</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Basic Information -->
+                        <h5 class="mb-3">Basic Information</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.medication_name.label }} <span class="text-danger">*</span></label>
+                                {{ form.medication_name(class="form-control" + (" is-invalid" if form.medication_name.errors else "")) }}
+                                {% if form.medication_name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.medication_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.brand_name.label }}</label>
+                                {{ form.brand_name(class="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.active_ingredient.label }}</label>
+                                {{ form.active_ingredient(class="form-control") }}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.category.label }} <span class="text-danger">*</span></label>
+                                {{ form.category(class="form-control" + (" is-invalid" if form.category.errors else "")) }}
+                                {% if form.category.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.category.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Dosage Information -->
+                        <h5 class="mb-3">Dosage Information</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.default_dosage.label }} <span class="text-danger">*</span></label>
+                                {{ form.default_dosage(class="form-control" + (" is-invalid" if form.default_dosage.errors else "")) }}
+                                {% if form.default_dosage.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.default_dosage.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.dosage_unit.label }}</label>
+                                {{ form.dosage_unit(class="form-control") }}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.route_of_administration.label }}</label>
+                                {{ form.route_of_administration(class="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.frequency.label }}</label>
+                                {{ form.frequency(class="form-control") }}
+                                <small class="form-text text-muted">e.g., "Once daily", "Every 12 hours"</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.typical_duration_days.label }}</label>
+                                {{ form.typical_duration_days(class="form-control", min="0") }}
+                                <small class="form-text text-muted">Typical treatment duration</small>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Clinical Information -->
+                        <h5 class="mb-3">Clinical Information</h5>
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.indications.label }}</label>
+                            {{ form.indications(class="form-control", rows="3") }}
+                            <small class="form-text text-muted">What conditions this medication treats</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.contraindications.label }}</label>
+                            {{ form.contraindications(class="form-control", rows="2") }}
+                            <small class="form-text text-muted">When NOT to use this medication</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.side_effects.label }}</label>
+                            {{ form.side_effects(class="form-control", rows="2") }}
+                        </div>
+
+                        <hr>
+
+                        <!-- Compliance & Safety -->
+                        <h5 class="mb-3">Compliance & Safety</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.withdrawal_period_days.label }}</label>
+                                {{ form.withdrawal_period_days(class="form-control", min="0") }}
+                                <small class="form-text text-muted">Days before milk/meat can be sold after treatment</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.storage_requirements.label }}</label>
+                                {{ form.storage_requirements(class="form-control") }}
+                                <small class="form-text text-muted">e.g., "Refrigerate", "Room temperature"</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.requires_prescription(class="form-check-input") }}
+                                    <label class="form-check-label" for="requires_prescription">
+                                        {{ form.requires_prescription.label.text }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.is_active(class="form-check-input", checked="checked") }}
+                                    <label class="form-check-label" for="is_active">
+                                        {{ form.is_active.label.text }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Cost & Supplier -->
+                        <h5 class="mb-3">Cost & Supplier Information</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.cost_per_unit.label }}</label>
+                                {{ form.cost_per_unit(class="form-control", step="0.01", min="0") }}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.manufacturer.label }}</label>
+                                {{ form.manufacturer(class="form-control") }}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.supplier.label }}</label>
+                                {{ form.supplier(class="form-control") }}
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.notes.label }}</label>
+                            {{ form.notes(class="form-control", rows="2") }}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('health.list_medication_templates') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ 'Update' if template else 'Save' }} Template
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

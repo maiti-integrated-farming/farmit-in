@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-header"><h4>{{ title }}</h4></div>
+<div class="card"><div class="card-body">
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">{{ form.name.label(class="form-label") }}{{ form.name(class="form-control") }}</div>
+    <div class="mb-3">{{ form.phone.label(class="form-label") }}{{ form.phone(class="form-control") }}</div>
+    <div class="mb-3">{{ form.address.label(class="form-label") }}{{ form.address(class="form-control", rows=2) }}</div>
+    <div class="mb-3">{{ form.remarks.label(class="form-label") }}{{ form.remarks(class="form-control", rows=2) }}</div>
+    {{ form.submit(class="btn btn-farm") }}
+    <a href="{{ url_for('commercial.list_customers') }}" class="btn btn-outline-secondary">Cancel</a>
+</form>
+</div></div>
+{% endblock %}

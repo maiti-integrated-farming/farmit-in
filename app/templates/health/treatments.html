@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Treatments{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between">
+    <div>
+        <h4>Treatments</h4>
+        <a href="{{ url_for('health.list_vaccinations') }}" class="btn btn-sm btn-outline-secondary">Vaccinations</a>
+    </div>
+    <a href="{{ url_for('health.add_treatment') }}" class="btn btn-farm btn-sm">Add Treatment</a>
+</div>
+<div class="card">
+    <table class="table mb-0">
+        <thead><tr><th>Animal</th><th>Date</th><th>Symptoms</th><th>Diagnosis</th><th>Medicine</th><th>Follow-up</th></tr></thead>
+        <tbody>
+            {% for r in records %}
+            <tr>
+                <td>{{ r.animal.tag_no if r.animal else '—' }}</td>
+                <td>{{ r.date }}</td>
+                <td>{{ (r.symptoms or '—')[:40] }}</td>
+                <td>{{ (r.diagnosis or '—')[:40] }}</td>
+                <td>{{ r.medicine or '—' }}</td>
+                <td>{{ r.follow_up_date or '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted">No records</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

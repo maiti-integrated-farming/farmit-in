@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Milking Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3>Milking Records</h3>
+                    <a href="{{ url_for('milking.add_milking_record') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Milking Record
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Filter Form -->
+                    <form method="GET" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label>Animal</label>
+                                {{ filter_form.animal(class="form-control") }}
+                            </div>
+                            <div class="col-md-2">
+                                <label>Session</label>
+                                {{ filter_form.session(class="form-control") }}
+                            </div>
+                            <div class="col-md-2">
+                                <label>Date From</label>
+                                {{ filter_form.date_from(class="form-control", type="date") }}
+                            </div>
+                            <div class="col-md-2">
+                                <label>Date To</label>
+                                {{ filter_form.date_to(class="form-control", type="date") }}
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-info me-2">
+                                    <i class="fas fa-filter"></i> Filter
+                                </button>
+                                <a href="{{ url_for('milking.list_milking_records') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Summary Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h5>Today's Total</h5>
+                                    <h3>{{ today_summary.total_quantity|default(0)|round(2) }} L</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h5>Animals Milked Today</h5>
+                                    <h3>{{ today_summary.animals_milked|default(0) }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h5>Average Quality</h5>
+                                    <h3>{{ today_summary.avg_quality|default(0)|round(1) }}/10</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h5>Sessions Today</h5>
+                                    <h3>{{ today_summary.sessions|default(0) }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Records Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Session</th>
+                                    <th>Animal</th>
+                                    <th>Quantity (L)</th>
+                                    <th>Quality</th>
+                                    <th>Fat %</th>
+                                    <th>Milker</th>
+                                    <th>Duration</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in records %}
+                                <tr>
+                                    <td>{{ record.milking_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if record.session == 'MORNING' else ('primary' if record.session == 'AFTERNOON' else 'dark') }}">
+                                            {{ record.session }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('animals.view', id=record.animal_id) }}">
+                                            {{ record.animal.tag_number }} - {{ record.animal.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ record.quantity|round(2) }}</td>
+                                    <td>
+                                        {% if record.quality_score %}
+                                        <span class="badge bg-{{ 'success' if record.quality_score >= 8 else ('warning' if record.quality_score >= 6 else 'danger') }}">
+                                            {{ record.quality_score }}/10
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ record.fat_content|round(2) if record.fat_content else 'N/A' }}%</td>
+                                    <td>{{ record.milker.username if record.milker else 'N/A' }}</td>
+                                    <td>{{ record.milking_duration if record.milking_duration else 'N/A' }} min</td>
+                                    <td>
+                                        <a href="{{ url_for('milking.edit_milking_record', id=record.id) }}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('milking.delete_milking_record', id=record.id) }}" style="display:inline;" onsubmit="return confirm('Delete this record?');">
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">No milking records found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if records.has_prev or records.has_next %}
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item {% if not records.has_prev %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('milking.list_milking_records', page=records.prev_num) }}">Previous</a>
+                            </li>
+                            {% for page_num in records.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                                {% if page_num %}
+                                <li class="page-item {% if page_num == records.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('milking.list_milking_records', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endfor %}
+                            <li class="page-item {% if not records.has_next %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('milking.list_milking_records', page=records.next_num) }}">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

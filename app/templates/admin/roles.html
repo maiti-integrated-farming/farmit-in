@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Roles{% endblock %}
+{% block content %}
+<div class="page-header"><h4>Roles & Permissions</h4></div>
+<div class="row g-3">
+{% for role in roles %}
+<div class="col-md-6">
+    <div class="card">
+        <div class="card-header bg-white">
+            <strong>{{ role.name }}</strong> <code class="ms-2">{{ role.code }}</code>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small">{{ role.description or '' }}</p>
+            <div class="d-flex flex-wrap gap-1">
+                {% for p in role.permissions %}
+                <span class="badge bg-light text-dark border">{{ p.codename }}</span>
+                {% else %}
+                <span class="text-muted">No permissions assigned</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% endblock %}

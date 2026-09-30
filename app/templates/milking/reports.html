@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Milking Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Milking Reports & Analytics</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Report Period Selector -->
+                    <form method="GET" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label>Report Type</label>
+                                <select name="report_type" class="form-control">
+                                    <option value="daily" {% if report_type == 'daily' %}selected{% endif %}>Daily</option>
+                                    <option value="weekly" {% if report_type == 'weekly' %}selected{% endif %}>Weekly</option>
+                                    <option value="monthly" {% if report_type == 'monthly' %}selected{% endif %}>Monthly</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label>From Date</label>
+                                <input type="date" name="from_date" class="form-control" value="{{ from_date }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label>To Date</label>
+                                <input type="date" name="to_date" class="form-control" value="{{ to_date }}">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-chart-bar"></i> Generate Report
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="downloadReport()">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Summary Statistics -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h6>Total Production</h6>
+                                    <h3>{{ total_production|round(2) }} L</h3>
+                                    <small>{{ from_date }} to {{ to_date }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h6>Daily Average</h6>
+                                    <h3>{{ daily_average|round(2) }} L</h3>
+                                    <small>Per day</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h6>Average per Animal</h6>
+                                    <h3>{{ animal_average|round(2) }} L</h3>
+                                    <small>Per session</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h6>Quality Score</h6>
+                                    <h3>{{ avg_quality|round(1) }}/10</h3>
+                                    <small>Average</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Production by Session -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5>Production by Session</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for session, data in session_breakdown.items() %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="text-muted">{{ session }}</h6>
+                                            <h4>{{ data.quantity|round(2) }} L</h4>
+                                            <small>{{ data.count }} sessions</small><br>
+                                            <small class="text-muted">Avg: {{ data.average|round(2) }} L/session</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Producers -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5>Top Milk Producers</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Animal</th>
+                                            <th>Tag Number</th>
+                                            <th>Total Production</th>
+                                            <th>Average/Session</th>
+                                            <th>Sessions</th>
+                                            <th>Avg Quality</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for animal in top_producers %}
+                                        <tr>
+                                            <td>{{ loop.index }}</td>
+                                            <td>
+                                                <a href="{{ url_for('animals.view', id=animal.id) }}">
+                                                    {{ animal.name }}
+                                                </a>
+                                            </td>
+                                            <td>{{ animal.tag_number }}</td>
+                                            <td>{{ animal.total_quantity|round(2) }} L</td>
+                                            <td>{{ animal.avg_quantity|round(2) }} L</td>
+                                            <td>{{ animal.session_count }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if animal.avg_quality >= 8 else ('warning' if animal.avg_quality >= 6 else 'danger') }}">
+                                                    {{ animal.avg_quality|round(1) }}/10
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">No data available</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Summaries -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Daily Production Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Total Quantity</th>
+                                            <th>Animals Milked</th>
+                                            <th>Sessions</th>
+                                            <th>Avg Quality</th>
+                                            <th>Avg Fat %</th>
+                                            <th>Issues</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for summary in daily_summaries %}
+                                        <tr>
+                                            <td>{{ summary.date.strftime('%Y-%m-%d') }}</td>
+                                            <td>{{ summary.total_quantity|round(2) }} L</td>
+                                            <td>{{ summary.animals_milked }}</td>
+                                            <td>{{ summary.sessions }}</td>
+                                            <td>
+                                                {% if summary.avg_quality %}
+                                                <span class="badge bg-{{ 'success' if summary.avg_quality >= 8 else ('warning' if summary.avg_quality >= 6 else 'danger') }}">
+                                                    {{ summary.avg_quality|round(1) }}/10
+                                                </span>
+                                                {% else %}
+                                                N/A
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ summary.avg_fat_content|round(2) if summary.avg_fat_content else 'N/A' }}%</td>
+                                            <td>
+                                                {% if summary.abnormalities_count > 0 %}
+                                                <span class="badge bg-danger">{{ summary.abnormalities_count }} issues</span>
+                                                {% else %}
+                                                <span class="text-success">None</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">No data available for selected period</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadReport() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('format', 'excel');
+    window.location.href = '{{ url_for("milking.milking_reports") }}?' + params.toString();
+}
+</script>
+{% endblock %}
