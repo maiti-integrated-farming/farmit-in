@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import (
-    StringField, PasswordField, BooleanField, SubmitField, SelectField,
+    StringField, PasswordField, BooleanField, SubmitField, SelectField, SelectMultipleField,
     TextAreaField, DateField, DecimalField, IntegerField, HiddenField
 )
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange
@@ -161,7 +161,16 @@ class BreedingForm(FlaskForm):
 
 class VaccinationForm(FlaskForm):
     animal_id = SelectField('Animal', coerce=int, validators=[DataRequired()])
-    vaccine = StringField('Vaccine', validators=[DataRequired(), Length(1, 120)])
+    vaccine = SelectField('Vaccine', choices=[
+        ('FMD', 'Cattle: FMD'),
+        ('LSD', 'Cattle: LSD'),
+        ('HS', 'Cattle/Goat: HS'),
+        ('BQ', 'Cattle: BQ'),
+        ('ANTHRAX', 'Cattle: Anthrax'),
+        ('PPR', 'Goat: PPR'),
+        ('GOAT_POX', 'Goat: Goat Pox'),
+        ('ENTEROTOXEMIA', 'Goat: Enterotoxemia'),
+    ], validators=[DataRequired()])
     date = DateField('Date', validators=[DataRequired()])
     dose = StringField('Dose', validators=[Optional(), Length(0, 40)])
     batch_no = StringField('Batch No', validators=[Optional(), Length(0, 60)])
@@ -175,7 +184,12 @@ class TreatmentForm(FlaskForm):
     date = DateField('Date', validators=[DataRequired()])
     symptoms = TextAreaField('Symptoms', validators=[Optional()])
     diagnosis = TextAreaField('Diagnosis', validators=[Optional()])
-    medicine = StringField('Medicine', validators=[Optional(), Length(0, 120)])
+    medicine = SelectField('Medicine', choices=[
+        ('', 'Select medicine'),
+        ('DEWORMING', 'Deworming'),
+        ('CALCIUM_VITAMIN', 'Calcium and Vitamin'),
+        ('GENERAL_MEDICINE', 'General Medicine'),
+    ], validators=[Optional()])
     dose = StringField('Dose', validators=[Optional(), Length(0, 40)])
     follow_up_date = DateField('Follow-up Date', validators=[Optional()])
     remarks = TextAreaField('Remarks', validators=[Optional()])
@@ -248,6 +262,14 @@ class FarmForm(FlaskForm):
     contact_phone = StringField('Contact Phone', validators=[Optional(), Length(0, 30)])
     status = SelectField('Status', choices=[('ACTIVE', 'Active'), ('INACTIVE', 'Inactive')], validators=[DataRequired()])
     submit = SubmitField('Save Farm')
+
+
+class RoleForm(FlaskForm):
+    code = StringField('Role Code', validators=[DataRequired(), Length(2, 40)])
+    name = StringField('Role Name', validators=[DataRequired(), Length(2, 80)])
+    description = TextAreaField('Description', validators=[Optional()])
+    permission_ids = SelectMultipleField('Allowed Pages and Actions', coerce=int, validators=[Optional()])
+    submit = SubmitField('Save Role')
 
 
 class OrganizationProfileForm(FlaskForm):

@@ -4,10 +4,17 @@
 <div class="page-header d-flex justify-content-between">
     <div>
         <h4>Vaccinations</h4>
+        <a href="{{ url_for('reports.export_report', section='vaccinations', file_format='xlsx') }}" class="btn btn-sm btn-outline-secondary">Excel</a>
+        <a href="{{ url_for('reports.export_report', section='vaccinations', file_format='pdf') }}" class="btn btn-sm btn-outline-secondary">PDF</a>
         <a href="{{ url_for('health.list_treatments') }}" class="btn btn-sm btn-outline-secondary">Treatments</a>
     </div>
     <a href="{{ url_for('health.add_vaccination') }}" class="btn btn-farm btn-sm">Add Vaccination</a>
 </div>
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-4"><select name="species_id" class="form-select form-select-sm"><option value="">All animal types</option>{% for item in species %}<option value="{{ item.id }}" {% if species_id == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+    <div class="col-md-4"><select name="breed_id" class="form-select form-select-sm"><option value="">All breeds</option>{% for item in breeds %}<option value="{{ item.id }}" {% if breed_id == item.id %}selected{% endif %}>{{ item.species.name }} - {{ item.name }}</option>{% endfor %}</select></div>
+    <div class="col-auto"><button class="btn btn-sm btn-outline-primary">Filter</button></div>
+</form>
 <div class="card">
     <table class="table mb-0">
         <thead><tr><th>Animal</th><th>Vaccine</th><th>Date</th><th>Dose</th><th>Next Due</th><th>Batch</th></tr></thead>

@@ -9,9 +9,10 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3>Milking Records</h3>
+                    <span><a href="{{ url_for('reports.export_report', section='milking', file_format='xlsx') }}" class="btn btn-outline-secondary btn-sm">Excel</a> <a href="{{ url_for('reports.export_report', section='milking', file_format='pdf') }}" class="btn btn-outline-secondary btn-sm">PDF</a>
                     <a href="{{ url_for('milking.add_milking_record') }}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Add Milking Record
-                    </a>
+                    </a></span>
                 </div>
                 <div class="card-body">
                     <!-- Filter Form -->
@@ -19,7 +20,7 @@
                         <div class="row">
                             <div class="col-md-3">
                                 <label>Animal</label>
-                                {{ filter_form.animal(class="form-control") }}
+                                {{ filter_form.animal_id(class="form-control") }}
                             </div>
                             <div class="col-md-2">
                                 <label>Session</label>
@@ -99,30 +100,30 @@
                             <tbody>
                                 {% for record in records %}
                                 <tr>
-                                    <td>{{ record.milking_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
                                     <td>
                                         <span class="badge bg-{{ 'warning' if record.session == 'MORNING' else ('primary' if record.session == 'AFTERNOON' else 'dark') }}">
                                             {{ record.session }}
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="{{ url_for('animals.view', id=record.animal_id) }}">
-                                            {{ record.animal.tag_number }} - {{ record.animal.name }}
+                                        <a href="{{ url_for('animals.view_animal', id=record.animal_id) }}">
+                                            {{ record.animal.tag_no }} - {{ record.animal.name or '' }}
                                         </a>
                                     </td>
                                     <td>{{ record.quantity|round(2) }}</td>
                                     <td>
-                                        {% if record.quality_score %}
-                                        <span class="badge bg-{{ 'success' if record.quality_score >= 8 else ('warning' if record.quality_score >= 6 else 'danger') }}">
-                                            {{ record.quality_score }}/10
+                                        {% if record.quality_grade %}
+                                        <span class="badge bg-info">
+                                            {{ record.quality_grade }}
                                         </span>
                                         {% else %}
                                         <span class="text-muted">N/A</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ record.fat_content|round(2) if record.fat_content else 'N/A' }}%</td>
-                                    <td>{{ record.milker.username if record.milker else 'N/A' }}</td>
-                                    <td>{{ record.milking_duration if record.milking_duration else 'N/A' }} min</td>
+                                    <td>{{ record.recorder.username if record.recorder else 'N/A' }}</td>
+                                    <td>N/A</td>
                                     <td>
                                         <a href="{{ url_for('milking.edit_milking_record', id=record.id) }}" class="btn btn-sm btn-warning">
                                             <i class="fas fa-edit"></i>

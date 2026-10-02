@@ -4,6 +4,8 @@
 <div class="page-header d-flex justify-content-between">
     <div>
         <h4>Expenses</h4>
+        <a href="{{ url_for('reports.export_report', section='expenses', file_format='xlsx') }}" class="btn btn-sm btn-outline-secondary">Excel</a>
+        <a href="{{ url_for('reports.export_report', section='expenses', file_format='pdf') }}" class="btn btn-sm btn-outline-secondary">PDF</a>
         <a href="{{ url_for('commercial.list_sales') }}" class="btn btn-sm btn-outline-secondary">Sales</a>
         <a href="{{ url_for('commercial.list_customers') }}" class="btn btn-sm btn-outline-secondary">Customers</a>
     </div>

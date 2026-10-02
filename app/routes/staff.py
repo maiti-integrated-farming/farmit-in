@@ -33,6 +33,12 @@ def add_staff():
         if not user:
             flash('User not found. They must register first.', 'danger')
             return render_template('staff/form.html', form=form, title='Add Staff')
+        if user.organization_id != current_user.organization_id:
+            flash('Staff must belong to your organization.', 'danger')
+            return render_template('staff/form.html', form=form, title='Add Staff')
+        if not current_user.organization.can_add_staff():
+            flash('Your organization has reached its staff limit.', 'warning')
+            return render_template('staff/form.html', form=form, title='Add Staff')
         existing = StaffMembership.query.filter_by(user_id=user.id, farm_id=farm_id).first()
         if existing:
             if existing.is_active:

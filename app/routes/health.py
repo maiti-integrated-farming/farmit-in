@@ -1,9 +1,10 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, session
+from flask import Blueprint, render_template, redirect, url_for, flash, session, request
 from flask_login import login_required, current_user
 from app.models import db, Vaccination, Treatment, Animal
 from app.forms import VaccinationForm, TreatmentForm
 from app.decorators import farm_required, permission_required
-from datetime import datetime
+from datetime import datetime, timedelta
+from sqlalchemy import and_, func
 
 health_bp = Blueprint('health', __name__)
 
@@ -14,8 +15,18 @@ health_bp = Blueprint('health', __name__)
 @permission_required('view_health')
 def list_vaccinations():
     farm_id = session['current_farm_id']
-    records = Vaccination.query.filter_by(farm_id=farm_id).order_by(Vaccination.date.desc()).limit(100).all()
-    return render_template('health/vaccinations.html', records=records)
+    breed_id = request.args.get('breed_id', type=int)
+    species_id = request.args.get('species_id', type=int)
+    query = Vaccination.query.join(Animal).filter(Vaccination.farm_id == farm_id)
+    if breed_id:
+        query = query.filter(Animal.breed_id == breed_id)
+    if species_id:
+        query = query.join(Animal.breed).filter_by(species_id=species_id)
+    records = query.order_by(Vaccination.date.desc()).limit(100).all()
+    from app.models import Breed, Species
+    return render_template('health/vaccinations.html', records=records, breed_id=breed_id,
+                           species_id=species_id, breeds=Breed.query.join(Species).all(),
+                           species=Species.query.order_by(Species.name).all())
 
 
 @health_bp.route('/vaccinations/add', methods=['GET', 'POST'])
@@ -30,6 +41,17 @@ def add_vaccination():
     ).order_by(Animal.tag_no).all()
     form.animal_id.choices = [(a.id, f'{a.tag_no} - {a.name or ""}') for a in animals]
     if form.validate_on_submit():
+        animal = db.session.get(Animal, form.animal_id.data)
+        if not animal or animal.farm_id != farm_id:
+            flash('Invalid animal.', 'danger')
+            return render_template('health/vaccination_form.html', form=form, title='Add Vaccination')
+        species_name = (animal.breed.species.name if animal.breed and animal.breed.species else '').lower()
+        cattle_vaccines = {'FMD', 'LSD', 'HS', 'BQ', 'ANTHRAX'}
+        goat_vaccines = {'PPR', 'FMD', 'GOAT_POX', 'ENTEROTOXEMIA', 'HS'}
+        allowed_vaccines = goat_vaccines if 'goat' in species_name else cattle_vaccines
+        if form.vaccine.data not in allowed_vaccines:
+            flash('Selected vaccine is not available for this animal type.', 'danger')
+            return render_template('health/vaccination_form.html', form=form, title='Add Vaccination')
         rec = Vaccination(
             farm_id=farm_id,
             animal_id=form.animal_id.data,
@@ -56,8 +78,18 @@ def add_vaccination():
 @permission_required('view_health')
 def list_treatments():
     farm_id = session['current_farm_id']
-    records = Treatment.query.filter_by(farm_id=farm_id).order_by(Treatment.date.desc()).limit(100).all()
-    return render_template('health/treatments.html', records=records)
+    breed_id = request.args.get('breed_id', type=int)
+    species_id = request.args.get('species_id', type=int)
+    query = Treatment.query.join(Animal).filter(Treatment.farm_id == farm_id)
+    if breed_id:
+        query = query.filter(Animal.breed_id == breed_id)
+    if species_id:
+        query = query.join(Animal.breed).filter_by(species_id=species_id)
+    records = query.order_by(Treatment.date.desc()).limit(100).all()
+    from app.models import Breed, Species
+    return render_template('health/treatments.html', records=records, breed_id=breed_id,
+                           species_id=species_id, breeds=Breed.query.join(Species).all(),
+                           species=Species.query.order_by(Species.name).all())
 
 
 @health_bp.route('/treatments/add', methods=['GET', 'POST'])
@@ -79,6 +111,7 @@ def add_treatment():
             symptoms=form.symptoms.data,
             diagnosis=form.diagnosis.data,
             medicine=form.medicine.data,
+            treatment_type=form.medicine.data or 'GENERAL_MEDICINE',
             dose=form.dose.data,
             vet=current_user.id,
             follow_up_date=form.follow_up_date.data,

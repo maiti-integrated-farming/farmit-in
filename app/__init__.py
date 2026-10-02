@@ -41,6 +41,7 @@ def create_app(config_name=None):
     from app.routes.organization import organization_bp
     from app.routes.platform_admin import platform_admin_bp
     from app.routes.milking import milking_bp  # NEW: Milking module
+    from app.routes.reports import reports_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -55,6 +56,7 @@ def create_app(config_name=None):
     app.register_blueprint(organization_bp, url_prefix='/organization')
     app.register_blueprint(platform_admin_bp, url_prefix='/platform-admin')
     app.register_blueprint(milking_bp, url_prefix='/milking')  # NEW: Milking module
+    app.register_blueprint(reports_bp)
 
     # Context processors
     @app.context_processor
@@ -88,10 +90,6 @@ def _seed_initial_data():
     """Seed roles, permissions, species, and subscription plans for SaaS.
     Short-circuits immediately if data already exists to avoid slow startup."""
     from app.models import Role
-
-    # Fast check — if roles exist, everything is already seeded
-    if Role.query.first():
-        return
 
     from datetime import date, timedelta
     from app.models import (
@@ -253,6 +251,8 @@ def _seed_initial_data():
         ('manage_farm_settings', 'Manage Farm Settings', 'admin'),
         ('view_reports', 'View Reports', 'reports'),
         ('manage_permissions', 'Manage Permissions', 'admin'),
+        ('view_milking', 'View Milking', 'milking'),
+        ('manage_milking', 'Manage Milking', 'milking'),
     ]
     for code, name, ct in perms:
         if not Permission.query.filter_by(codename=code).first():

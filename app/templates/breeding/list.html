@@ -3,7 +3,8 @@
 {% block content %}
 <div class="page-header d-flex justify-content-between">
     <h4>Breeding Records</h4>
-    <a href="{{ url_for('breeding.add_breeding') }}" class="btn btn-farm btn-sm">Add Record</a>
+    <span><a href="{{ url_for('reports.export_report', section='breeding', file_format='xlsx') }}" class="btn btn-outline-secondary btn-sm">Excel</a> <a href="{{ url_for('reports.export_report', section='breeding', file_format='pdf') }}" class="btn btn-outline-secondary btn-sm">PDF</a>
+    <a href="{{ url_for('breeding.add_breeding') }}" class="btn btn-farm btn-sm">Add Record</a></span>
 </div>
 <div class="card">
     <table class="table mb-0">

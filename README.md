@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo-128.png" alt="FarmIt Logo" width="128" height="128">
+  <img src="brand-asset/logo-128.png" alt="FarmIt Logo" width="128" height="128">
   
   # FarmIt - Enterprise Multi-Tenant SaaS Farm Management Platform
   

@@ -65,7 +65,7 @@
 </div>
 
 <!-- Feed Management Dashboard -->
-{% if total_daily_feed or feed_alerts %}
+{% if stats.total_daily_feed or feed_alerts or stats.low_stock_feed_count %}
 <div class="row g-3 mb-4">
     <div class="col-md-12">
         <div class="card border-{% if feed_alert_level == 'critical' %}danger{% elif feed_alert_level == 'warning' %}warning{% else %}info{% endif %}">
@@ -80,7 +80,7 @@
                             <div class="card-body text-center">
                                 <i class="bi bi-calendar-day fs-2 text-primary"></i>
                                 <h6 class="text-muted mt-2">Daily Feed Requirement</h6>
-                                <h3 class="mb-0">{{ total_daily_feed|round(2) }} kg</h3>
+                                <h3 class="mb-0">{{ stats.total_daily_feed|round(2) }} kg</h3>
                                 <small class="text-muted">Calculated based on animal needs</small>
                             </div>
                         </div>
@@ -105,8 +105,8 @@
                                 <i class="bi bi-hourglass-split fs-2 text-{% if days_feed_remaining < 3 %}danger{% elif days_feed_remaining < 7 %}warning{% else %}info{% endif %}"></i>
                                 <h6 class="text-muted mt-2">Days of Feed Remaining</h6>
                                 <h3 class="mb-0">
-                                    {% if total_daily_feed > 0 %}
-                                    {{ days_feed_remaining|round(1) }} days
+                                    {% if stats.total_daily_feed > 0 %}
+                                    {{ stats.days_feed_remaining }} days
                                     {% else %}
                                     N/A
                                     {% endif %}
@@ -127,7 +127,7 @@
                             <div class="alert alert-{{ 'danger' if alert.severity == 'critical' else 'warning' }} mb-2 py-2">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <strong>{{ alert.feed_type.name if alert.feed_type else 'Unknown Feed' }}</strong>
+                                        <strong>{{ alert.feed.feed_name if alert.feed else 'Feed stock' }}</strong>
                                         <p class="mb-0 small">{{ alert.message }}</p>
                                     </div>
                                     <div class="text-end">
@@ -135,8 +135,8 @@
                                             {{ alert.severity|upper }}
                                         </div>
                                         <div class="small text-muted">
-                                            {% if alert.days_until_depletion %}
-                                            {{ alert.days_until_depletion|round(1) }} days left
+                                            {% if alert.days_remaining %}
+                                            {{ alert.days_remaining }} days left
                                             {% endif %}
                                         </div>
                                     </div>
@@ -146,11 +146,14 @@
                         {% endfor %}
                     </div>
                     <div class="mt-2">
-                        <a href="{{ url_for('feed.list_feed') }}" class="btn btn-sm btn-primary">
+                        <a href="{{ url_for('feed.list_feeds') }}" class="btn btn-sm btn-primary">
                             <i class="bi bi-cart-plus"></i> Manage Feed Stock
                         </a>
                     </div>
                 </div>
+                {% endif %}
+                {% if stats.low_stock_feed_count %}
+                <div class="alert alert-warning mt-3 mb-0"><i class="bi bi-exclamation-triangle"></i> {{ stats.low_stock_feed_count }} feed item(s) are at or below minimum stock.</div>
                 {% endif %}
             </div>
         </div>
@@ -215,7 +218,7 @@
                 <a href="{{ url_for('milking.add_milking_record') }}" class="list-group-item list-group-item-action">
                     <i class="bi bi-droplet text-primary"></i> Record Milking
                 </a>
-                <a href="{{ url_for('health.add_enhanced_treatment') }}" class="list-group-item list-group-item-action">
+                <a href="{{ url_for('health.add_treatment') }}" class="list-group-item list-group-item-action">
                     <i class="bi bi-prescription2 text-danger"></i> Add Treatment
                 </a>
             </div>

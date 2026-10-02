@@ -3,6 +3,10 @@ from datetime import timedelta
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(basedir, '.env'))
+
 
 def _fix_db_url(url):
     """Force psycopg2 driver by replacing postgresql:// with postgresql+psycopg2://.

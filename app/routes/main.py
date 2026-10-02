@@ -157,6 +157,10 @@ def dashboard():
         farm_id=farm_id,
         is_resolved=False
     ).order_by(FeedAlert.severity.desc()).limit(5).all()
+    low_stock_feeds = Feed.query.filter(
+        Feed.farm_id == farm_id,
+        Feed.stock_quantity <= Feed.minimum_stock
+    ).order_by(Feed.stock_quantity.asc()).all()
     
     # NEW: Determine feed alert level
     feed_alert_level = 'success'  # Green
@@ -182,13 +186,15 @@ def dashboard():
         'days_feed_remaining': days_feed_remaining,
         'feed_alerts_count': len(feed_alerts),
         'feed_alert_level': feed_alert_level,
+        'low_stock_feed_count': len(low_stock_feeds),
     }
 
     return render_template('main/dashboard.html', 
                          farm=farm, 
                          stats=stats, 
                          recent_animals=recent_animals,
-                         feed_alerts=feed_alerts)
+                         feed_alerts=feed_alerts,
+                         low_stock_feeds=low_stock_feeds)
 
 
 @main_bp.route('/switch-farm/<int:farm_id>')

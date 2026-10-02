@@ -11,14 +11,15 @@ from app.models import (
     db, Farm, Animal, MilkingRecord, MilkingSummary, Breed
 )
 from app.forms import MilkingRecordForm, MilkingFilterForm
-from app.decorators import farm_required
+from app.decorators import farm_required, permission_required
 
 milking_bp = Blueprint('milking', __name__)
 
 
-@milking_bp.route('/milking')
+@milking_bp.route('/')
 @login_required
 @farm_required
+@permission_required('view_milking')
 def list_milking_records():
     """List all milking records with filtering."""
     farm_id = session.get('current_farm_id')
@@ -54,6 +55,8 @@ def list_milking_records():
     
     # Get animals for filter dropdown
     animals = Animal.query.filter_by(farm_id=farm_id, gender='FEMALE').order_by(Animal.tag_no).all()
+    filter_form = MilkingFilterForm()
+    filter_form.animal_id.choices = [(0, 'All Animals')] + [(a.id, f'{a.tag_no} - {a.name or "Unnamed"}') for a in animals]
     
     # Calculate summary stats for current view
     summary_query = query.with_entities(
@@ -69,12 +72,20 @@ def list_milking_records():
         'avg_quantity': float(summary_query.avg_quantity or 0),
         'total_revenue': float(summary_query.total_revenue or 0)
     }
+    today_summary = {
+        'total_quantity': summary['total_quantity'],
+        'animals_milked': summary['total_records'],
+        'avg_quality': 0,
+        'sessions': summary['total_records'],
+    }
     
     return render_template('milking/list.html',
                          farm=farm,
                          records=records,
                          animals=animals,
+                         filter_form=filter_form,
                          summary=summary,
+                         today_summary=today_summary,
                          filters={
                              'animal_id': animal_id,
                              'date_from': date_from,
@@ -84,9 +95,10 @@ def list_milking_records():
                          })
 
 
-@milking_bp.route('/milking/record', methods=['GET', 'POST'])
+@milking_bp.route('/record', methods=['GET', 'POST'])
 @login_required
 @farm_required
+@permission_required('manage_milking')
 def add_milking_record():
     """Add new milking record."""
     farm_id = session.get('current_farm_id')
@@ -108,6 +120,13 @@ def add_milking_record():
     ]
     
     if form.validate_on_submit():
+        duplicate = MilkingRecord.query.filter_by(
+            farm_id=farm_id, animal_id=form.animal_id.data,
+            date=form.date.data, session=form.session.data
+        ).first()
+        if duplicate:
+            flash('A milking record already exists for this animal, date, and session.', 'warning')
+            return render_template('milking/record_form.html', form=form, farm=farm)
         # Calculate total amount if price provided
         total_amount = None
         if form.price_per_liter.data and form.quantity.data:
@@ -149,9 +168,10 @@ def add_milking_record():
     return render_template('milking/record_form.html', form=form, farm=farm)
 
 
-@milking_bp.route('/milking/edit/<int:id>', methods=['GET', 'POST'])
+@milking_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 @farm_required
+@permission_required('manage_milking')
 def edit_milking_record(id):
     """Edit existing milking record."""
     farm_id = session.get('current_farm_id')
@@ -166,6 +186,7 @@ def edit_milking_record(id):
     form.animal_id.choices = [(a.id, f"{a.tag_no} - {a.name or 'Unnamed'}") for a in animals]
     
     if form.validate_on_submit():
+        old_date = record.date
         # Update record
         record.animal_id = form.animal_id.data
         record.date = form.date.data
@@ -189,7 +210,9 @@ def edit_milking_record(id):
         db.session.commit()
         
         # Update daily summary
-        update_daily_summary(farm_id, record.date)
+        update_daily_summary(farm_id, old_date)
+        if record.date != old_date:
+            update_daily_summary(farm_id, record.date)
         
         flash('Milking record updated successfully', 'success')
         return redirect(url_for('milking.list_milking_records'))
@@ -197,9 +220,10 @@ def edit_milking_record(id):
     return render_template('milking/record_form.html', form=form, farm=farm, record=record)
 
 
-@milking_bp.route('/milking/delete/<int:id>', methods=['POST'])
+@milking_bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
 @farm_required
+@permission_required('manage_milking')
 def delete_milking_record(id):
     """Delete milking record."""
     farm_id = session.get('current_farm_id')
@@ -216,9 +240,10 @@ def delete_milking_record(id):
     return redirect(url_for('milking.list_milking_records'))
 
 
-@milking_bp.route('/milking/reports')
+@milking_bp.route('/reports')
 @login_required
 @farm_required
+@permission_required('view_reports')
 def milking_reports():
     """Milking production reports and analytics."""
     farm_id = session.get('current_farm_id')
@@ -279,13 +304,49 @@ def milking_reports():
         'date_from': date_from,
         'date_to': date_to
     }
+
+    session_breakdown = {}
+    for record in MilkingRecord.query.filter(
+        MilkingRecord.farm_id == farm_id,
+        MilkingRecord.date >= date_from,
+        MilkingRecord.date <= date_to,
+    ).all():
+        bucket = session_breakdown.setdefault(record.session, {'quantity': 0, 'count': 0, 'average': 0})
+        bucket['quantity'] += record.quantity or 0
+        bucket['count'] += 1
+    for bucket in session_breakdown.values():
+        bucket['average'] = bucket['quantity'] / bucket['count'] if bucket['count'] else 0
+    animal_average = total_quantity / len(top_animals) if top_animals else 0
+    top_producers = [
+        {'id': row.id, 'name': row.name or '', 'tag_number': row.tag_no,
+         'total_quantity': float(row.total_milk or 0), 'avg_quantity': float(row.avg_per_session or 0),
+         'session_count': row.milking_count, 'avg_quality': 0}
+        for row in top_animals
+    ]
+    daily_summaries = [
+        {'date': row.date, 'total_quantity': row.total_quantity or 0,
+         'animals_milked': row.total_animals_milked or 0, 'sessions': 0,
+         'avg_quality': 0, 'avg_fat_content': row.avg_fat_content or 0,
+         'abnormalities_count': 0}
+        for row in summaries
+    ]
     
     return render_template('milking/reports.html',
                          farm=farm,
                          summaries=summaries,
                          top_animals=top_animals,
                          chart_data=chart_data,
-                         stats=stats)
+                         stats=stats,
+                         report_type=request.args.get('report_type', 'daily'),
+                         from_date=date_from,
+                         to_date=date_to,
+                         total_production=total_quantity,
+                         daily_average=avg_per_day,
+                         animal_average=animal_average,
+                         avg_quality=0,
+                         session_breakdown=session_breakdown,
+                         top_producers=top_producers,
+                         daily_summaries=daily_summaries)
 
 
 def update_daily_summary(farm_id, summary_date):
