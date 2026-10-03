@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request
 from flask_login import login_required, current_user
-from app.models import db, Vaccination, Treatment, Animal
+from app.models import db, Vaccination, Treatment, Animal, Expense
 from app.forms import VaccinationForm, TreatmentForm
 from app.decorators import farm_required, permission_required
 from datetime import datetime, timedelta
@@ -60,12 +60,25 @@ def add_vaccination():
             dose=form.dose.data,
             batch_no=form.batch_no.data,
             next_due_date=form.next_due_date.data,
+            cost=form.cost.data,
             administered_by=current_user.id,
             remarks=form.remarks.data,
             created_by=current_user.id,
             updated_by=current_user.id,
         )
         db.session.add(rec)
+        if rec.cost:
+            db.session.add(Expense(
+                farm_id=farm_id,
+                expense_date=rec.date,
+                category='VACCINE',
+                description=f'Vaccination: {rec.vaccine} - {animal.tag_no}',
+                amount=rec.cost,
+                payment_mode='OTHER',
+                remarks='Automatically recorded from vaccination record.',
+                created_by=current_user.id,
+                updated_by=current_user.id,
+            ))
         db.session.commit()
         flash('Vaccination recorded.', 'success')
         return redirect(url_for('health.list_vaccinations'))

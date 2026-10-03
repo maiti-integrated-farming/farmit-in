@@ -103,8 +103,11 @@ def add_sale():
     form.buyer_id.choices = [(c.id, c.name) for c in customers]
     if form.validate_on_submit():
         total = form.total_amount.data
-        if form.live_weight.data and form.rate_per_kg.data and not total:
+        if form.live_weight.data and form.rate_per_kg.data:
             total = Decimal(str(form.live_weight.data)) * Decimal(str(form.rate_per_kg.data))
+        if total is None:
+            flash('Enter a total amount or provide both live weight and rate per kg.', 'danger')
+            return render_template('commercial/sale_form.html', form=form, title='Record Animal Sale')
         sale = AnimalSale(
             farm_id=farm_id,
             animal_id=form.animal_id.data,

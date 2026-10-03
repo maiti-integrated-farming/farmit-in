@@ -61,6 +61,14 @@
                     {{ form.purchase_price.label(class="form-label") }}
                     {{ form.purchase_price(class="form-control") }}
                 </div>
+                <div class="col-md-4">
+                    {{ form.feed_id.label(class="form-label") }}
+                    {{ form.feed_id(class="form-select") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.daily_feed_quantity.label(class="form-label") }}
+                    {{ form.daily_feed_quantity(class="form-control", placeholder="kg per day") }}
+                </div>
                 <div class="col-12">
                     {{ form.remarks.label(class="form-label") }}
                     {{ form.remarks(class="form-control", rows=2) }}

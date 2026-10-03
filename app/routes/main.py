@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.models import db, Farm, Animal, Vaccination, Deworming, Treatment, Notification, Expense, AnimalSale, Feed
 from app.decorators import farm_required, organization_required
 from datetime import date, timedelta
+from decimal import Decimal
 from sqlalchemy import func
 
 main_bp = Blueprint('main', __name__)
@@ -83,7 +84,7 @@ def select_farm():
 @farm_required
 def dashboard():
     """Farm dashboard with tenant-isolated data."""
-    from app.models import FeedAlert, Feed
+    from app.models import FeedAlert, Feed, AnimalFeedConsumption
     
     farm_id = session['current_farm_id']
     farm = db.session.get(Farm, farm_id)
@@ -144,12 +145,42 @@ def dashboard():
         farm_id=farm_id, recipient_id=current_user.id, is_read=False
     ).count()
     
-    # NEW: Calculate total daily feed requirement
+    # Record each assigned animal's daily feed once per day. The date check
+    # makes dashboard refreshes idempotent.
     active_animals = Animal.query.filter_by(farm_id=farm_id).filter(
         Animal.status.in_(['ACTIVE', 'PREGNANT', 'LACTATING', 'MILKING', 'GROWING'])
     ).all()
-    
-    total_daily_feed = sum(animal.calculate_daily_feed_requirement() for animal in active_animals)
+    total_daily_feed = Decimal('0')
+    for animal in active_animals:
+        required = Decimal(str(animal.calculate_daily_feed_requirement() or 0))
+        total_daily_feed += required
+        if not animal.assigned_feed or required <= 0:
+            continue
+        already_recorded = AnimalFeedConsumption.query.filter_by(
+            animal_id=animal.id, feed_id=animal.feed_id, date=today,
+            feeding_method='AUTO'
+        ).first()
+        if already_recorded:
+            continue
+        feed = animal.assigned_feed
+        available = Decimal(str(feed.stock_quantity or 0))
+        consumed = min(available, required)
+        if consumed > 0:
+            unit_cost = Decimal(str(feed.purchase_price or 0))
+            db.session.add(AnimalFeedConsumption(
+                animal_id=animal.id,
+                feed_id=feed.id,
+                farm_id=farm_id,
+                date=today,
+                quantity=float(consumed),
+                unit=feed.unit or 'KG',
+                unit_cost=unit_cost or None,
+                total_cost=unit_cost * consumed if unit_cost else None,
+                feeding_method='AUTO',
+                recorded_by=current_user.id,
+            ))
+            feed.stock_quantity = available - consumed
+    db.session.commit()
     
     # NEW: Get current feed stock total
     total_feed_stock = db.session.query(func.coalesce(func.sum(Feed.stock_quantity), 0)).filter(
@@ -157,7 +188,7 @@ def dashboard():
     ).scalar() or 0
     
     # NEW: Calculate days of feed remaining
-    days_feed_remaining = int(total_feed_stock / total_daily_feed) if total_daily_feed > 0 else 0
+    days_feed_remaining = int(Decimal(str(total_feed_stock or 0)) / total_daily_feed) if total_daily_feed > 0 else 0
     
     # NEW: Get unresolved feed alerts
     feed_alerts = FeedAlert.query.filter_by(
@@ -168,6 +199,28 @@ def dashboard():
         Feed.farm_id == farm_id,
         Feed.stock_quantity <= Feed.minimum_stock
     ).order_by(Feed.stock_quantity.asc()).all()
+    expiring_feeds = Feed.query.filter(
+        Feed.farm_id == farm_id,
+        Feed.expiry_date.isnot(None),
+        Feed.expiry_date <= today + timedelta(days=14)
+    ).order_by(Feed.expiry_date.asc()).all()
+    stock_alerts = [
+        {
+            'feed_name': feed.feed_name,
+            'message': f'{feed.feed_name} {float(feed.stock_quantity or 0):.2f} {feed.unit or ""} is about to end.',
+            'severity': 'critical' if (feed.stock_quantity or 0) <= 0 else 'warning',
+        }
+        for feed in low_stock_feeds
+    ]
+    stock_alerts.extend({
+        'feed_name': feed.feed_name,
+        'message': (
+            f'{feed.feed_name} expires on {feed.expiry_date.strftime("%Y-%m-%d")}.'
+            if feed.expiry_date >= today else
+            f'{feed.feed_name} expired on {feed.expiry_date.strftime("%Y-%m-%d")}.'
+        ),
+        'severity': 'critical' if feed.expiry_date < today else 'warning',
+    } for feed in expiring_feeds)
     
     # NEW: Determine feed alert level
     feed_alert_level = 'success'  # Green
@@ -188,16 +241,18 @@ def dashboard():
         'low_stock': low_stock,
         'unread_notifs': unread_notifs,
         # NEW feed stats
-        'total_daily_feed': round(total_daily_feed, 2),
+        'total_daily_feed': round(float(total_daily_feed), 2),
         'total_feed_stock': float(total_feed_stock),
         'days_feed_remaining': days_feed_remaining,
         'feed_alerts_count': len(feed_alerts),
         'feed_alert_level': feed_alert_level,
         'low_stock_feed_count': len(low_stock_feeds),
+        'feed_stock_alerts': stock_alerts,
     }
 
     return render_template('main/dashboard.html', 
-                         farm=farm, 
+                         farm=farm, total_feed_stock=float(total_feed_stock or 0),
+                         days_feed_remaining=days_feed_remaining,
                          stats=stats, 
                          recent_animals=recent_animals,
                          feed_alerts=feed_alerts,

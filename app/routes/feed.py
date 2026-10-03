@@ -37,6 +37,7 @@ def add_feed():
             purchase_price=form.purchase_price.data,
             stock_quantity=form.stock_quantity.data or 0,
             minimum_stock=form.minimum_stock.data or 0,
+            expiry_date=form.expiry_date.data,
             created_by=current_user.id,
             updated_by=current_user.id,
         )

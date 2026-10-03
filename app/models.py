@@ -480,6 +480,8 @@ class Animal(db.Model):
     current_weight = db.Column(db.Numeric(10, 2))
     purchase_date = db.Column(db.Date)
     purchase_price = db.Column(db.Numeric(12, 2))
+    feed_id = db.Column(db.Integer, db.ForeignKey('feeds.id'))
+    daily_feed_quantity = db.Column(db.Numeric(12, 2))
     source = db.Column(db.String(30))  # BORN_ON_FARM, PURCHASED
     location_id = db.Column(db.Integer, db.ForeignKey('locations.id'))
     status = db.Column(db.String(20), default='ACTIVE')  # ACTIVE, PREGNANT, SICK, QUARANTINE, SOLD, DEAD, CULLED
@@ -492,6 +494,7 @@ class Animal(db.Model):
 
     mother = db.relationship('Animal', remote_side=[id], foreign_keys=[mother_id], backref='offspring_as_mother')
     father = db.relationship('Animal', remote_side=[id], foreign_keys=[father_id], backref='offspring_as_father')
+    assigned_feed = db.relationship('Feed', backref='assigned_animals')
 
     __table_args__ = (
         UniqueConstraint('farm_id', 'tag_no', name='unique_tag_no_per_farm'),
@@ -504,6 +507,8 @@ class Animal(db.Model):
         Calculate daily feed requirement based on weight, age, and status.
         Returns amount in kg.
         """
+        if self.daily_feed_quantity is not None:
+            return float(self.daily_feed_quantity)
         if not self.current_weight:
             return 0.0
         
@@ -667,6 +672,7 @@ class Vaccination(db.Model):
     dose = db.Column(db.String(40))
     batch_no = db.Column(db.String(60))
     next_due_date = db.Column(db.Date)
+    cost = db.Column(db.Numeric(12, 2))
     administered_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     remarks = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -793,6 +799,7 @@ class Feed(db.Model):
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'))
     stock_quantity = db.Column(db.Numeric(12, 2), default=0)
     minimum_stock = db.Column(db.Numeric(12, 2), default=0)
+    expiry_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -884,7 +891,7 @@ class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     farm_id = db.Column(db.Integer, db.ForeignKey('farms.id'), nullable=False)
     expense_date = db.Column(db.Date)
-    category = db.Column(db.String(40))  # FEED, MEDICINE, VACCINE, LABOUR, ELECTRICITY, TRANSPORT, REPAIR, OTHER
+    category = db.Column(db.String(40))  # FEED, MEDICINE, VACCINE, ANIMAL_PURCHASE, LABOUR, ELECTRICITY, TRANSPORT, REPAIR, OTHER
     description = db.Column(db.String(255))
     amount = db.Column(db.Numeric(14, 2))
     payment_mode = db.Column(db.String(30))
@@ -1123,6 +1130,7 @@ class FeedAlert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     farm_id = db.Column(db.Integer, db.ForeignKey('farms.id'), nullable=False)
     feed_id = db.Column(db.Integer, db.ForeignKey('feeds.id'), nullable=False)
+    feed = db.relationship('Feed', backref='alerts')
     
     # Alert details
     alert_type = db.Column(db.String(30))  # LOW_STOCK, OUT_OF_STOCK, EXPIRING_SOON, EXPIRED

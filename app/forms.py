@@ -117,6 +117,8 @@ class AnimalForm(FlaskForm):
     current_weight = DecimalField('Current Weight (kg)', validators=[Optional(), NumberRange(min=0)])
     purchase_date = DateField('Purchase Date', validators=[Optional()])
     purchase_price = DecimalField('Purchase Price', validators=[Optional(), NumberRange(min=0)])
+    feed_id = SelectField('Assigned Feed', coerce=int, validators=[Optional()])
+    daily_feed_quantity = DecimalField('Daily Feed Quantity', validators=[Optional(), NumberRange(min=0)])
     source = SelectField('Source', choices=[
         ('BORN_ON_FARM', 'Born on Farm'),
         ('PURCHASED', 'Purchased'),
@@ -190,6 +192,7 @@ class VaccinationForm(FlaskForm):
     dose = StringField('Dose', validators=[Optional(), Length(0, 40)])
     batch_no = StringField('Batch No', validators=[Optional(), Length(0, 60)])
     next_due_date = DateField('Next Due Date', validators=[Optional()])
+    cost = DecimalField('Cost', validators=[Optional(), NumberRange(min=0)])
     remarks = TextAreaField('Remarks', validators=[Optional()])
     submit = SubmitField('Save Vaccination')
 
@@ -217,6 +220,7 @@ class FeedForm(FlaskForm):
     purchase_price = DecimalField('Purchase Price', validators=[Optional(), NumberRange(min=0)])
     stock_quantity = DecimalField('Stock Quantity', validators=[Optional(), NumberRange(min=0)], default=0)
     minimum_stock = DecimalField('Minimum Stock', validators=[Optional(), NumberRange(min=0)], default=0)
+    expiry_date = DateField('Expiry Date', validators=[Optional()])
     submit = SubmitField('Save Feed')
 
 
@@ -237,7 +241,7 @@ class ExpenseForm(FlaskForm):
     category = SelectField('Category', choices=[
         ('FEED', 'Feed'), ('MEDICINE', 'Medicine'), ('VACCINE', 'Vaccine'),
         ('LABOUR', 'Labour'), ('ELECTRICITY', 'Electricity'), ('TRANSPORT', 'Transport'),
-        ('REPAIR', 'Repair'), ('OTHER', 'Other'),
+        ('REPAIR', 'Repair'), ('ANIMAL_PURCHASE', 'Animal Purchase'), ('OTHER', 'Other'),
     ], validators=[DataRequired()])
     description = StringField('Description', validators=[Optional(), Length(0, 255)])
     amount = DecimalField('Amount', validators=[DataRequired(), NumberRange(min=0.01)])
@@ -254,7 +258,7 @@ class AnimalSaleForm(FlaskForm):
     sale_date = DateField('Sale Date', validators=[DataRequired()])
     live_weight = DecimalField('Live Weight (kg)', validators=[Optional(), NumberRange(min=0)])
     rate_per_kg = DecimalField('Rate per Kg', validators=[Optional(), NumberRange(min=0)])
-    total_amount = DecimalField('Total Amount', validators=[DataRequired(), NumberRange(min=0)])
+    total_amount = DecimalField('Total Amount', validators=[Optional(), NumberRange(min=0)])
     payment_mode = SelectField('Payment Mode', choices=[
         ('CASH', 'Cash'), ('BANK_TRANSFER', 'Bank Transfer'), ('UPI', 'UPI'), ('OTHER', 'Other')
     ], validators=[DataRequired()])

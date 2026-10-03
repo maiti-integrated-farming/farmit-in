@@ -1,5 +1,6 @@
 import os
 from flask import Flask
+from sqlalchemy import inspect, text
 from flask_login import LoginManager
 from flask_wtf.csrf import generate_csrf
 from config import config
@@ -83,10 +84,38 @@ def create_app(config_name=None):
 
     with app.app_context():
         db.create_all()
+        _ensure_runtime_schema()
         _sync_organization_owner_flags()
         _seed_initial_data()
 
     return app
+
+
+def _ensure_runtime_schema():
+    """Add nullable fields introduced after the initial create_all schema."""
+    additions = {
+        'animals': {
+            'feed_id': 'INTEGER',
+            'daily_feed_quantity': 'NUMERIC(12, 2)',
+        },
+        'feeds': {
+            'expiry_date': 'DATE',
+        },
+        'vaccinations': {
+            'cost': 'NUMERIC(12, 2)',
+        },
+    }
+    inspector = inspect(db.engine)
+    changed = False
+    for table, columns in additions.items():
+        existing = {column['name'] for column in inspector.get_columns(table)}
+        for name, definition in columns.items():
+            if name not in existing:
+                statement = f'ALTER TABLE {table} ADD COLUMN {name} {definition}'
+                db.session.execute(text(statement))
+                changed = True
+    if changed:
+        db.session.commit()
 
 
 def _sync_organization_owner_flags():

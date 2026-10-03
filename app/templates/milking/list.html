@@ -124,13 +124,13 @@
                                     <td>{{ record.fat_content|round(2) if record.fat_content else 'N/A' }}%</td>
                                     <td>{{ record.recorder.username if record.recorder else 'N/A' }}</td>
                                     <td>N/A</td>
-                                    <td>
+                                    <td class="text-nowrap">
                                         <a href="{{ url_for('milking.edit_milking_record', id=record.id) }}" class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i>
+                                            <i class="bi bi-pencil"></i> Edit
                                         </a>
                                         <form method="POST" action="{{ url_for('milking.delete_milking_record', id=record.id) }}" style="display:inline;" onsubmit="return confirm('Delete this record?');">
                                             <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="fas fa-trash"></i>
+                                                <i class="bi bi-trash"></i> Delete
                                             </button>
                                         </form>
                                     </td>

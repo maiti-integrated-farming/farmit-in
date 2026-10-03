@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request
 from flask_login import login_required, current_user
-from app.models import db, Animal, AnimalFeedConsumption, Feed, Breed, Location, Species, AnimalWeight, AnimalMovement
+from app.models import db, Animal, AnimalFeedConsumption, Feed, Breed, Location, Species, AnimalWeight, AnimalMovement, Expense
 from app.forms import AnimalForm, AnimalFeedConsumptionForm, LocationForm
 from app.decorators import farm_required, permission_required
 from datetime import datetime
@@ -47,6 +47,9 @@ def add_animal():
     form.location_id.choices = [(0, '-- Select --')] + [
         (l.id, l.name) for l in Location.query.filter_by(farm_id=farm_id, is_active=True).all()
     ]
+    form.feed_id.choices = [(0, '-- No assigned feed --')] + [
+        (f.id, f'{f.feed_name} ({f.unit})') for f in Feed.query.filter_by(farm_id=farm_id).order_by(Feed.feed_name).all()
+    ]
     if form.validate_on_submit():
         # Check unique tag
         exists = Animal.query.filter_by(farm_id=farm_id, tag_no=form.tag_no.data).first()
@@ -65,6 +68,8 @@ def add_animal():
             current_weight=form.current_weight.data,
             purchase_date=form.purchase_date.data,
             purchase_price=form.purchase_price.data,
+            feed_id=form.feed_id.data or None,
+            daily_feed_quantity=form.daily_feed_quantity.data,
             source=form.source.data,
             location_id=form.location_id.data or None,
             status=form.status.data,
@@ -73,6 +78,18 @@ def add_animal():
             updated_by=current_user.id,
         )
         db.session.add(animal)
+        if animal.source == 'PURCHASED' and animal.purchase_price:
+            db.session.add(Expense(
+                farm_id=farm_id,
+                expense_date=animal.purchase_date or datetime.utcnow().date(),
+                category='ANIMAL_PURCHASE',
+                description=f'Animal purchase: {animal.tag_no}',
+                amount=animal.purchase_price,
+                payment_mode='OTHER',
+                remarks='Automatically recorded from animal purchase.',
+                created_by=current_user.id,
+                updated_by=current_user.id,
+            ))
         db.session.commit()
         flash(f'Animal {animal.tag_no} added successfully.', 'success')
         return redirect(url_for('animals.list_animals'))
@@ -152,6 +169,9 @@ def edit_animal(id):
                              Breed.query.join(Species).order_by(Species.name, Breed.name).all()]
     form.location_id.choices = [(0, '-- Select --')] + [
         (l.id, l.name) for l in Location.query.filter_by(farm_id=farm_id, is_active=True).all()
+    ]
+    form.feed_id.choices = [(0, '-- No assigned feed --')] + [
+        (f.id, f'{f.feed_name} ({f.unit})') for f in Feed.query.filter_by(farm_id=farm_id).order_by(Feed.feed_name).all()
     ]
     if form.validate_on_submit():
         other = Animal.query.filter(
