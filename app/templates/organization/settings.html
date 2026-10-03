@@ -105,10 +105,10 @@
                     <div class="row text-center">
                         <div class="col-md-4 mb-3">
                             <h6 class="text-muted">Farms</h6>
-                            <h3 class="mb-0">{{ total_farms }} / {{ organization.max_farms }}</h3>
+                            <h3 class="mb-0">{{ total_farms }} / {{ organization.farm_limit }}</h3>
                             <div class="progress mt-2">
-                                <div class="progress-bar {% if total_farms >= organization.max_farms %}bg-danger{% else %}bg-success{% endif %}" 
-                                     style="width: {{ (total_farms / organization.max_farms * 100) if organization.max_farms > 0 else 0 }}%"></div>
+                                  <div class="progress-bar {% if total_farms >= organization.farm_limit %}bg-danger{% else %}bg-success{% endif %}" 
+                                      style="width: {{ (total_farms / organization.farm_limit * 100) if organization.farm_limit > 0 else 0 }}%"></div>
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -129,7 +129,7 @@
                         </div>
                     </div>
                     
-                    {% if total_farms >= organization.max_farms or total_animals >= organization.max_animals or total_members >= organization.max_staff %}
+                    {% if total_farms >= organization.farm_limit or total_animals >= organization.max_animals or total_members >= organization.max_staff %}
                     <div class="alert alert-warning mt-3">
                         <i class="bi bi-exclamation-triangle"></i> You've reached or exceeded one or more limits. 
                         <a href="{{ url_for('organization.subscription') }}" class="alert-link">Upgrade your plan</a> to add more resources.

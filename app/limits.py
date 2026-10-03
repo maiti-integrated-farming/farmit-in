@@ -25,7 +25,7 @@ def check_farm_limit():
     
     if not org.can_add_farm():
         raise LimitExceeded(
-            f'You have reached the maximum number of farms ({org.max_farms}) for your plan. Please upgrade.',
+            f'You have reached the maximum number of farms ({org.farm_limit}) for your organization.',
             'farms'
         )
     return True

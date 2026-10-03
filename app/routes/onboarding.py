@@ -35,10 +35,10 @@ def setup_wizard():
 @onboarding_bp.route('/setup/farm', methods=['GET', 'POST'])
 @login_required
 def setup_farm():
-    """Create the first farm during onboarding - Only for owners and admins."""
-    if not (current_user.is_organization_owner or current_user.is_organization_admin):
-        flash('Only organization owners and administrators can create farms.', 'danger')
-        return redirect(url_for('main.dashboard'))
+    """Create a farm for the current owner's organization."""
+    if not current_user.is_organization_owner:
+        flash('Only the organization owner can create farms.', 'danger')
+        return redirect(url_for('main.select_farm'))
     
     org = current_user.organization
     if not org:
@@ -47,8 +47,8 @@ def setup_farm():
     
     # Check if they can add more farms
     if not org.can_add_farm():
-        flash('You have reached the maximum number of farms for your plan.', 'warning')
-        return redirect(url_for('onboarding.setup_wizard'))
+        flash(f'An organization can have a maximum of {org.farm_limit} farms.', 'warning')
+        return redirect(url_for('main.select_farm'))
     
     form = FarmForm()
     
@@ -98,9 +98,12 @@ def setup_farm():
             db.session.commit()
             
             flash(f'Farm "{farm.name}" created successfully!', 'success')
+            if org.setup_completed:
+                return redirect(url_for('main.select_farm'))
             return redirect(url_for('onboarding.setup_complete'))
     
-    return render_template('onboarding/setup_farm.html', form=form, organization=org)
+    return render_template('onboarding/setup_farm.html', form=form, organization=org,
+                           farm_count=org.farms.count())
 
 
 @onboarding_bp.route('/setup/complete', methods=['GET', 'POST'])

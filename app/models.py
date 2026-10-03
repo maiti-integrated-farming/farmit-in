@@ -3,9 +3,10 @@ from decimal import Decimal
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import Index, UniqueConstraint
+from sqlalchemy import Index, UniqueConstraint, func
 
 db = SQLAlchemy()
+MAX_FARMS_PER_ORGANIZATION = 5
 
 
 # ---------------------------------------------------------------------------
@@ -155,9 +156,12 @@ class Organization(db.Model):
         return False
     
     def can_add_farm(self):
-        """Check if organization can add more farms."""
-        current_farms = self.farms.filter_by(status='ACTIVE').count()
-        return current_farms < self.max_farms
+        """Check the platform-wide farm creation limit for this organization."""
+        return self.farms.count() < MAX_FARMS_PER_ORGANIZATION
+
+    @property
+    def farm_limit(self):
+        return MAX_FARMS_PER_ORGANIZATION
     
     def can_add_animal(self):
         """Check if organization can add more animals."""
@@ -168,11 +172,21 @@ class Organization(db.Model):
         ).scalar() or 0
         return total_animals < self.max_animals
     
-    def can_add_staff(self):
-        """Check if organization can add more staff."""
-        total_staff = db.session.query(func.count(StaffMembership.id.distinct())).join(Farm).filter(
+    def can_add_staff(self, user_id=None):
+        """Check the unique staff limit, without charging for additional farm assignments."""
+        if user_id is not None:
+            existing_staff = db.session.query(StaffMembership.id).join(Farm).filter(
+                Farm.organization_id == self.id,
+                StaffMembership.user_id == user_id,
+                StaffMembership.is_active == True,
+            ).first()
+            if existing_staff:
+                return True
+
+        total_staff = db.session.query(func.count(func.distinct(StaffMembership.user_id))).join(Farm).filter(
             Farm.organization_id == self.id,
-            StaffMembership.is_active == True
+            StaffMembership.is_active == True,
+            StaffMembership.user_id != self.owner_id,
         ).scalar() or 0
         return total_staff < self.max_staff
 

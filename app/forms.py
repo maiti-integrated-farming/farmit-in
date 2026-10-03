@@ -24,17 +24,6 @@ class RegisterForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired(), Length(6, 128)])
     password2 = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
 
-    # Role selection — what kind of account owner is this?
-    account_type = SelectField(
-        'Account Type',
-        choices=[
-            ('OWNER', 'Farm Owner — Full access, manage everything'),
-            ('ADMIN', 'Farm Administrator — Admin access, manage staff & operations'),
-        ],
-        default='OWNER',
-        validators=[DataRequired()]
-    )
-
     # Organization information
     organization_name = StringField('Organization/Farm Business Name', validators=[DataRequired(), Length(3, 120)])
     organization_slug = StringField('Organization URL Slug', validators=[DataRequired(), Length(3, 80)])
@@ -57,6 +46,32 @@ class RegisterForm(FlaskForm):
             raise ValidationError('Slug must contain only lowercase letters, numbers, and hyphens.')
         if Organization.query.filter_by(slug=field.data).first():
             raise ValidationError('This organization slug is already taken.')
+
+
+class StaffRegisterForm(FlaskForm):
+    """Create a staff account that waits for an organization owner to assign a farm."""
+    username = StringField('Username', validators=[DataRequired(), Length(3, 80)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    first_name = StringField('First Name', validators=[DataRequired(), Length(1, 60)])
+    last_name = StringField('Last Name', validators=[DataRequired(), Length(1, 60)])
+    phone = StringField('Phone', validators=[Optional(), Length(0, 30)])
+    organization_slug = StringField('Organization Slug', validators=[DataRequired(), Length(3, 80)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(6, 128)])
+    password2 = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Create Staff Account')
+
+    def validate_username(self, field):
+        if User.query.filter_by(username=field.data).first():
+            raise ValidationError('Username already taken.')
+
+    def validate_email(self, field):
+        if User.query.filter_by(email=field.data).first():
+            raise ValidationError('Email already registered.')
+
+    def validate_organization_slug(self, field):
+        organization = Organization.query.filter_by(slug=field.data.strip().lower()).first()
+        if not organization or not organization.is_active:
+            raise ValidationError('Organization not found. Check the slug with your farm owner.')
 
 
 class InvitationAcceptForm(FlaskForm):

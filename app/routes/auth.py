@@ -6,19 +6,56 @@ from app.models import (
     db, User, Organization, SubscriptionPlan, Farm, Location, 
     Role, StaffMembership, UserInvitation
 )
-from app.forms import LoginForm, RegisterForm, InvitationAcceptForm
+from app.forms import LoginForm, RegisterForm, StaffRegisterForm, InvitationAcceptForm
 
 auth_bp = Blueprint('auth', __name__)
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    return _login('all')
+
+
+@auth_bp.route('/staff/login', methods=['GET', 'POST'])
+def staff_login():
+    return _login('staff')
+
+
+@auth_bp.route('/owner/login', methods=['GET', 'POST'])
+def owner_login():
+    return _login('owner')
+
+
+@auth_bp.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    return _login('admin')
+
+
+def _login(account_type):
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data) and user.is_active:
+            has_farm_admin_role = any(
+                membership.role and membership.role.code == 'ADMIN'
+                for membership in user.get_memberships(active_only=True)
+            )
+            if account_type == 'owner' and not user.is_organization_owner:
+                flash('Invalid username or password for this login.', 'danger')
+                return render_template('auth/login.html', form=form, login_type=account_type)
+            if account_type == 'admin' and not (
+                (user.is_organization_admin and not user.is_organization_owner) or has_farm_admin_role
+            ):
+                flash('Invalid username or password for this login.', 'danger')
+                return render_template('auth/login.html', form=form, login_type=account_type)
+            if account_type == 'staff' and not user.is_platform_admin and (
+                user.is_organization_owner or user.is_organization_admin or has_farm_admin_role
+            ):
+                flash('Invalid username or password for this login.', 'danger')
+                return render_template('auth/login.html', form=form, login_type=account_type)
+
             # Check if user's organization has active subscription
             if user.organization_id:
                 org = db.session.get(Organization, user.organization_id)
@@ -64,7 +101,7 @@ def login():
                 flash('You have not been assigned to any farm yet. Please wait for your administrator to assign you.', 'info')
                 return redirect(url_for('main.no_access'))
         flash('Invalid username or password.', 'danger')
-    return render_template('auth/login.html', form=form)
+    return render_template('auth/login.html', form=form, login_type=account_type)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -81,8 +118,6 @@ def register():
             trial_plan = SubscriptionPlan.query.first()  # Fallback to any plan
         
         # Create the user first (without organization)
-        # Note: account_type determines initial role, but owner_id on organization is the true owner
-        is_owner = form.account_type.data == 'OWNER'
         user = User(
             username=form.username.data,
             email=form.email.data,
@@ -90,9 +125,8 @@ def register():
             last_name=form.last_name.data,
             phone=form.phone.data,
             is_active=True,
-            # Owner gets both flags, Admin only gets admin flag
-            is_organization_owner=is_owner,
-            is_organization_admin=True,  # Both owners and admins have admin privileges
+            is_organization_owner=True,
+            is_organization_admin=True,
         )
         user.set_password(form.password.data)
         db.session.add(user)
@@ -134,6 +168,39 @@ def register():
     return render_template('auth/register.html', form=form)
 
 
+@auth_bp.route('/register/staff', methods=['GET', 'POST'])
+def register_staff():
+    """Register staff in an existing organization without granting farm access."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.dashboard'))
+
+    form = StaffRegisterForm()
+    if form.validate_on_submit():
+        organization = Organization.query.filter_by(
+            slug=form.organization_slug.data.strip().lower()
+        ).first()
+        user = User(
+            username=form.username.data,
+            email=form.email.data,
+            first_name=form.first_name.data,
+            last_name=form.last_name.data,
+            phone=form.phone.data,
+            organization_id=organization.id,
+            is_active=True,
+            is_organization_owner=False,
+            is_organization_admin=False,
+        )
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+
+        login_user(user)
+        flash('Your account is ready. Your organization owner must assign you to a farm before you can use FarmIt.', 'info')
+        return redirect(url_for('main.no_access'))
+
+    return render_template('auth/staff_register.html', form=form)
+
+
 @auth_bp.route('/invitation/<token>', methods=['GET', 'POST'])
 def accept_invitation(token):
     """Accept an invitation to join an organization."""
@@ -166,6 +233,7 @@ def accept_invitation(token):
             organization_id=invitation.organization_id,
             is_active=True,
             is_organization_owner=False,
+            is_organization_admin=invitation.role_code == 'ADMIN',
             invited_by=invitation.invited_by,
             invitation_accepted_at=datetime.utcnow(),
         )

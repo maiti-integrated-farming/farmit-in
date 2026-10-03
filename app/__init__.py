@@ -1,6 +1,7 @@
 import os
 from flask import Flask
 from flask_login import LoginManager
+from flask_wtf.csrf import generate_csrf
 from config import config
 from app.models import db, User
 
@@ -20,6 +21,7 @@ def create_app(config_name=None):
 
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+    app.jinja_env.globals['csrf_token'] = generate_csrf
 
     # Ensure upload folder exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -81,9 +83,26 @@ def create_app(config_name=None):
 
     with app.app_context():
         db.create_all()
+        _sync_organization_owner_flags()
         _seed_initial_data()
 
     return app
+
+
+def _sync_organization_owner_flags():
+    """Keep legacy account flags aligned with each organization's recorded owner."""
+    from app.models import Organization
+
+    changed = False
+    organizations = Organization.query.filter(Organization.owner_id.isnot(None)).all()
+    for organization in organizations:
+        owner = db.session.get(User, organization.owner_id)
+        if owner and (not owner.is_organization_owner or not owner.is_organization_admin):
+            owner.is_organization_owner = True
+            owner.is_organization_admin = True
+            changed = True
+    if changed:
+        db.session.commit()
 
 
 def _seed_initial_data():

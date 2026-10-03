@@ -77,7 +77,7 @@
                             <th>Name</th>
                             <th>Email</th>
                             <th>Username</th>
-                            <th>Status</th>
+                            <th>Farm Access</th>
                             <th>Joined</th>
                             <th>Actions</th>
                         </tr>
@@ -94,7 +94,9 @@
                             <td>{{ member.email }}</td>
                             <td>{{ member.username }}</td>
                             <td>
-                                {% if member.is_active %}
+                                {% if member.id in pending_staff_ids %}
+                                <span class="badge bg-warning text-dark">Awaiting farm assignment</span>
+                                {% elif member.is_active %}
                                 <span class="badge bg-success">Active</span>
                                 {% else %}
                                 <span class="badge bg-secondary">Inactive</span>
@@ -102,6 +104,11 @@
                             </td>
                             <td>{{ member.date_joined.strftime('%Y-%m-%d') }}</td>
                             <td>
+                                {% if member.id in pending_staff_ids and current_farm %}
+                                <a href="{{ url_for('staff.add_staff', username=member.username) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-person-plus"></i> Assign to farm
+                                </a>
+                                {% endif %}
                                 {% if not member.is_organization_owner and member.id != current_user.id %}
                                 <form method="POST" action="{{ url_for('organization.deactivate_member', user_id=member.id) }}" class="d-inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

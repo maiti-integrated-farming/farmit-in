@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Select Farm{% endblock %}
-{% block fullpage %}
+{% block content %}
 <div class="login-page">
     <div class="card login-card p-4" style="width: 100%; max-width: 600px;">
         <div class="text-center mb-4">
             <h3 class="text-success"><i class="bi bi-geo-alt"></i> Select Farm</h3>
-            <p class="text-muted">Choose the farm you want to manage</p>
+            <p class="text-muted">Choose a farm to open{% if current_user.is_organization_owner %} · {{ current_user.organization.farms.count() }} of {{ current_user.organization.farm_limit }} farms{% endif %}</p>
             
             <!-- Show user role badge -->
             {% if current_user.is_platform_admin %}
@@ -66,6 +66,14 @@
                 {% endif %}
             </div>
         </form>
+
+        {% if can_create_farm %}
+        <a href="{{ url_for('onboarding.setup_farm') }}" class="btn btn-success w-100 mt-3">
+            <i class="bi bi-plus-lg"></i> Create Farm
+        </a>
+        {% elif current_user.is_organization_owner %}
+        <p class="text-center text-muted small mt-3 mb-0">Maximum of {{ current_user.organization.farm_limit }} farms reached.</p>
+        {% endif %}
         
         <p class="text-center mt-3 mb-0">
             <a href="{{ url_for('auth.logout') }}">Logout</a>

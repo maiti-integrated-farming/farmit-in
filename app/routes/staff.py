@@ -28,6 +28,8 @@ def add_staff():
     farm_id = session['current_farm_id']
     form = StaffInviteForm()
     form.role_id.choices = [(r.id, r.name) for r in Role.query.order_by(Role.name).all()]
+    if request.method == 'GET':
+        form.username.data = request.args.get('username', '')
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if not user:
@@ -36,7 +38,7 @@ def add_staff():
         if user.organization_id != current_user.organization_id:
             flash('Staff must belong to your organization.', 'danger')
             return render_template('staff/form.html', form=form, title='Add Staff')
-        if not current_user.organization.can_add_staff():
+        if not current_user.organization.can_add_staff(user_id=user.id):
             flash('Your organization has reached its staff limit.', 'warning')
             return render_template('staff/form.html', form=form, title='Add Staff')
         existing = StaffMembership.query.filter_by(user_id=user.id, farm_id=farm_id).first()

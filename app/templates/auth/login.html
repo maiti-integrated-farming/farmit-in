@@ -1,11 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Login{% endblock %}
+{% block title %}{% if login_type == 'owner' %}Farm Owner Login{% elif login_type == 'admin' %}Farm Administrator Login{% elif login_type == 'staff' %}Staff Login{% else %}Login{% endif %}{% endblock %}
 {% block fullpage %}
 <div class="login-page">
     <div class="card login-card p-4" style="width: 100%; max-width: 420px;">
         <div class="text-center mb-4">
             <h2 class="text-success"><i class="bi bi-flower1"></i> FarmIt</h2>
-            <p class="text-muted">Farm Management Platform</p>
+            <p class="text-muted">
+                {% if login_type == 'owner' %}Farm Owner Login
+                {% elif login_type == 'admin' %}Farm Administrator Login
+                {% elif login_type == 'staff' %}Staff Login
+                {% else %}Farm Management Platform{% endif %}
+            </p>
+        </div>
+        <div class="btn-group w-100 mb-3" role="group" aria-label="Select login type">
+            <a class="btn btn-outline-primary {% if login_type == 'owner' %}active{% endif %}" href="{{ url_for('auth.owner_login') }}">Owner</a>
+            <a class="btn btn-outline-primary {% if login_type == 'admin' %}active{% endif %}" href="{{ url_for('auth.admin_login') }}">Administrator</a>
+            <a class="btn btn-outline-primary {% if login_type == 'staff' %}active{% endif %}" href="{{ url_for('auth.staff_login') }}">Staff</a>
         </div>
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -30,12 +40,15 @@
             </div>
             {{ form.submit(class="btn btn-farm w-100") }}
         </form>
+        {% if login_type == 'owner' %}
         <p class="text-center mt-3 mb-0">
-            <small>Demo: <code>owner</code> / <code>owner123</code> or <code>staff1</code> / <code>staff123</code></small>
+            <a href="{{ url_for('auth.register') }}">Create a farm owner account</a>
         </p>
-        <p class="text-center mt-2">
-            <a href="{{ url_for('auth.register') }}">Create an account</a>
+        {% elif login_type in ['staff', 'all'] %}
+        <p class="text-center mt-3 mb-0">
+            <a href="{{ url_for('auth.register_staff') }}">Create a staff account</a>
         </p>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

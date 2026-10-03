@@ -108,6 +108,10 @@ def members():
         return redirect(url_for('main.dashboard'))
     
     members = User.query.filter_by(organization_id=org.id).order_by(User.date_joined.desc()).all()
+    pending_staff_ids = {
+        member.id for member in members
+        if member.is_active and not member.is_organization_owner and not member.get_memberships(active_only=True)
+    }
     
     # Get pending invitations
     pending_invitations = UserInvitation.query.filter_by(
@@ -118,6 +122,7 @@ def members():
     return render_template('organization/members.html',
                          organization=org,
                          members=members,
+                         pending_staff_ids=pending_staff_ids,
                          pending_invitations=pending_invitations)
 
 

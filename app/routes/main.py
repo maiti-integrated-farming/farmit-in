@@ -36,10 +36,16 @@ def select_farm():
         memberships = current_user.get_memberships(active_only=True)
         # Get all farms in the user's organization that they have access to
         farms = [m.farm for m in memberships if m.farm and m.farm.status == 'ACTIVE']
+    can_create_farm = bool(
+        current_user.is_organization_owner
+        and current_user.organization
+        and current_user.organization.can_add_farm()
+    )
     
     if not farms and not current_user.is_platform_admin:
         flash('You are not assigned to any farm. Contact your organization owner.', 'warning')
-        return render_template('main/select_farm.html', memberships=[], farms=[])
+        return render_template('main/select_farm.html', memberships=[], farms=[],
+                               can_create_farm=can_create_farm)
 
     if request.method == 'POST':
         farm_id = request.form.get('farm_id', type=int)
@@ -68,7 +74,8 @@ def select_farm():
         session['current_farm_id'] = farms[0].id
         return redirect(url_for('main.dashboard'))
 
-    return render_template('main/select_farm.html', memberships=memberships, farms=farms)
+    return render_template('main/select_farm.html', memberships=memberships, farms=farms,
+                           can_create_farm=can_create_farm)
 
 
 @main_bp.route('/dashboard')
