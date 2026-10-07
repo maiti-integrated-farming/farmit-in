@@ -107,9 +107,11 @@ class InviteUserForm(FlaskForm):
 
 
 class AnimalForm(FlaskForm):
-    tag_no = StringField('Tag Number', validators=[DataRequired(), Length(1, 40)])
+    tag_no = StringField('TAG NUMBER (by govt)', validators=[DataRequired(), Length(1, 40)])
     name = StringField('Name', validators=[Optional(), Length(0, 80)])
-    gender = SelectField('Gender', choices=[('MALE', 'Male'), ('FEMALE', 'Female')], validators=[DataRequired()])
+    gender = SelectField('Gender', choices=[('MALE', 'Male'), ('FEMALE', 'Female'), ('CASTRATED', 'Castrated')], validators=[DataRequired()])
+    father_id = SelectField('Male Parent', coerce=int, validators=[Optional()])
+    mother_id = SelectField('Female Parent', coerce=int, validators=[Optional()])
     breed_id = SelectField('Breed', coerce=int, validators=[DataRequired()])
     date_of_birth = DateField('Date of Birth', validators=[Optional()])
     color = StringField('Color', validators=[Optional(), Length(0, 60)])

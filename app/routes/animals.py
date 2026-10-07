@@ -5,8 +5,43 @@ from app.forms import AnimalForm, AnimalFeedConsumptionForm, LocationForm
 from app.decorators import farm_required, permission_required
 from datetime import datetime
 from decimal import Decimal
+import re
 
 animals_bp = Blueprint('animals', __name__)
+
+
+def _government_tag_prefix(breed):
+    words = re.findall(r'[A-Za-z0-9]+', f'{breed.species.name} {breed.name}')
+    return ''.join(word[0] for word in words[:3]).upper()
+
+
+def _government_tag_previews(breeds):
+    highest_numbers = {}
+    existing_tags = db.session.query(Animal.government_tag_no).filter(
+        Animal.government_tag_no.isnot(None)
+    ).all()
+    for (tag_number,) in existing_tags:
+        match = re.fullmatch(r'([A-Z]+) (\d+)', tag_number)
+        if match:
+            prefix, sequence = match.groups()
+            highest_numbers[prefix] = max(highest_numbers.get(prefix, 0), int(sequence))
+    return {
+        str(breed.id): f'{_government_tag_prefix(breed)} {highest_numbers.get(_government_tag_prefix(breed), 0) + 1:04d}'
+        for breed in breeds
+    }
+
+
+def _next_government_tag(breed):
+    prefix = _government_tag_prefix(breed)
+    tags = db.session.query(Animal.government_tag_no).filter(
+        Animal.government_tag_no.like(f'{prefix} %')
+    ).all()
+    sequences = [
+        int(match.group(1))
+        for (tag_number,) in tags
+        if (match := re.fullmatch(rf'{re.escape(prefix)} (\d+)', tag_number))
+    ]
+    return f'{prefix} {max(sequences, default=0) + 1:04d}'
 
 
 @animals_bp.route('/')
@@ -42,10 +77,21 @@ def list_animals():
 def add_animal():
     farm_id = session['current_farm_id']
     form = AnimalForm()
-    form.breed_id.choices = [(b.id, f'{b.species.name} - {b.name}') for b in
-                             Breed.query.join(Species).order_by(Species.name, Breed.name).all()]
+    breeds = Breed.query.join(Species).order_by(Species.name, Breed.name).all()
+    form.breed_id.choices = [(b.id, f'{b.species.name} - {b.name}') for b in breeds]
+    government_tag_previews = _government_tag_previews(breeds)
+    if not form.breed_id.data and breeds:
+        form.breed_id.data = breeds[0].id
     form.location_id.choices = [(0, '-- Select --')] + [
         (l.id, l.name) for l in Location.query.filter_by(farm_id=farm_id, is_active=True).all()
+    ]
+    form.father_id.choices = [(0, '-- Select male parent --')] + [
+        (a.id, f'{a.tag_no} - {a.name}' if a.name else a.tag_no)
+        for a in Animal.query.filter_by(farm_id=farm_id, gender='MALE').order_by(Animal.tag_no).all()
+    ]
+    form.mother_id.choices = [(0, '-- Select female parent --')] + [
+        (a.id, f'{a.tag_no} - {a.name}' if a.name else a.tag_no)
+        for a in Animal.query.filter_by(farm_id=farm_id, gender='FEMALE').order_by(Animal.tag_no).all()
     ]
     form.feed_id.choices = [(0, '-- No assigned feed --')] + [
         (f.id, f'{f.feed_name} ({f.unit})') for f in Feed.query.filter_by(farm_id=farm_id).order_by(Feed.feed_name).all()
@@ -55,12 +101,20 @@ def add_animal():
         exists = Animal.query.filter_by(farm_id=farm_id, tag_no=form.tag_no.data).first()
         if exists:
             flash('Tag number already exists for this farm.', 'danger')
-            return render_template('animals/form.html', form=form, title='Add Animal')
+            return render_template(
+                'animals/form.html', form=form, title='Add Animal',
+                government_tag_previews=government_tag_previews,
+                government_tag_preview=government_tag_previews.get(str(form.breed_id.data), ''),
+            )
+        selected_breed = db.session.get(Breed, form.breed_id.data)
         animal = Animal(
             farm_id=farm_id,
             tag_no=form.tag_no.data,
+            government_tag_no=_next_government_tag(selected_breed),
             name=form.name.data,
             gender=form.gender.data,
+            father_id=form.father_id.data or None,
+            mother_id=form.mother_id.data or None,
             breed_id=form.breed_id.data,
             date_of_birth=form.date_of_birth.data,
             color=form.color.data,
@@ -93,7 +147,11 @@ def add_animal():
         db.session.commit()
         flash(f'Animal {animal.tag_no} added successfully.', 'success')
         return redirect(url_for('animals.list_animals'))
-    return render_template('animals/form.html', form=form, title='Add Animal')
+    return render_template(
+        'animals/form.html', form=form, title='Add Animal',
+        government_tag_previews=government_tag_previews,
+        government_tag_preview=government_tag_previews.get(str(form.breed_id.data), ''),
+    )
 
 
 @animals_bp.route('/<int:id>')
@@ -170,6 +228,18 @@ def edit_animal(id):
     form.location_id.choices = [(0, '-- Select --')] + [
         (l.id, l.name) for l in Location.query.filter_by(farm_id=farm_id, is_active=True).all()
     ]
+    form.father_id.choices = [(0, '-- Select male parent --')] + [
+        (a.id, f'{a.tag_no} - {a.name}' if a.name else a.tag_no)
+        for a in Animal.query.filter(
+            Animal.farm_id == farm_id, Animal.gender == 'MALE', Animal.id != id
+        ).order_by(Animal.tag_no).all()
+    ]
+    form.mother_id.choices = [(0, '-- Select female parent --')] + [
+        (a.id, f'{a.tag_no} - {a.name}' if a.name else a.tag_no)
+        for a in Animal.query.filter(
+            Animal.farm_id == farm_id, Animal.gender == 'FEMALE', Animal.id != id
+        ).order_by(Animal.tag_no).all()
+    ]
     form.feed_id.choices = [(0, '-- No assigned feed --')] + [
         (f.id, f'{f.feed_name} ({f.unit})') for f in Feed.query.filter_by(farm_id=farm_id).order_by(Feed.feed_name).all()
     ]
@@ -183,6 +253,10 @@ def edit_animal(id):
         form.populate_obj(animal)
         if form.location_id.data == 0:
             animal.location_id = None
+        if form.father_id.data == 0:
+            animal.father_id = None
+        if form.mother_id.data == 0:
+            animal.mother_id = None
         animal.updated_by = current_user.id
         animal.updated_at = datetime.utcnow()
         db.session.commit()

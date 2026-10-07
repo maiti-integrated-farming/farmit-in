@@ -22,13 +22,15 @@
     <a href="?status=SICK" class="btn btn-sm {% if status=='SICK' %}btn-success{% else %}btn-outline-secondary{% endif %}">Sick</a>
     <a href="?gender=MALE" class="btn btn-sm {% if gender=='MALE' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Male</a>
     <a href="?gender=FEMALE" class="btn btn-sm {% if gender=='FEMALE' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Female</a>
+    <a href="?gender=CASTRATED" class="btn btn-sm {% if gender=='CASTRATED' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Castrated</a>
 </div>
 <div class="card">
     <div class="table-responsive">
         <table class="table table-hover mb-0">
             <thead>
                 <tr>
-                    <th>Tag</th>
+                    <th>TAG NUMBER (by govt)</th>
+                    <th>TAG NUMBER</th>
                     <th>Name</th>
                     <th>Gender</th>
                     <th>Breed</th>
@@ -42,8 +44,9 @@
                 {% for a in animals %}
                 <tr>
                     <td><strong>{{ a.tag_no }}</strong></td>
+                    <td>{{ a.government_tag_no or '—' }}</td>
                     <td>{{ a.name or '—' }}</td>
-                    <td>{{ a.gender }}</td>
+                    <td>{{ a.gender|title }}</td>
                     <td>{{ a.breed.name if a.breed else '—' }}</td>
                     <td>{{ a.location.name if a.location else '—' }}</td>
                     <td>{{ a.current_weight or '—' }}</td>
@@ -53,7 +56,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="8" class="text-center text-muted py-4">No animals found</td></tr>
+                <tr><td colspan="9" class="text-center text-muted py-4">No animals found</td></tr>
                 {% endfor %}
             </tbody>
         </table>

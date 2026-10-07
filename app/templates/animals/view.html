@@ -14,7 +14,11 @@
             <div class="card-header bg-white"><strong>Details</strong></div>
             <div class="card-body">
                 <table class="table table-sm mb-0">
-                    <tr><th>Gender</th><td>{{ animal.gender }}</td></tr>
+                    <tr><th>Gender</th><td>{{ animal.gender|title }}</td></tr>
+                    <tr><th>TAG NUMBER</th><td>{{ animal.government_tag_no or '—' }}</td></tr>
+                    <tr><th>TAG NUMBER (by govt)</th><td>{{ animal.tag_no }}</td></tr>
+                    <tr><th>Male Parent</th><td>{{ animal.father.tag_no if animal.father else '—' }}</td></tr>
+                    <tr><th>Female Parent</th><td>{{ animal.mother.tag_no if animal.mother else '—' }}</td></tr>
                     <tr><th>Breed</th><td>{{ animal.breed.name if animal.breed else '—' }} ({{ animal.breed.species.name if animal.breed else '' }})</td></tr>
                     <tr><th>DOB</th><td>{{ animal.date_of_birth or '—' }}</td></tr>
                     <tr><th>Color</th><td>{{ animal.color or '—' }}</td></tr>

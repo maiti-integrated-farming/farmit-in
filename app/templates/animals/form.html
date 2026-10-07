@@ -10,6 +10,14 @@
             {{ form.hidden_tag() }}
             <div class="row g-3">
                 <div class="col-md-4">
+                    {{ form.breed_id.label(class="form-label") }}
+                    {{ form.breed_id(class="form-select") }}
+                </div>
+                <div class="col-md-4">
+                    <label for="government_tag_no" class="form-label">TAG NUMBER</label>
+                    <input id="government_tag_no" class="form-control" value="{{ animal.government_tag_no if animal is defined else government_tag_preview }}" readonly>
+                </div>
+                <div class="col-md-4">
                     {{ form.tag_no.label(class="form-label") }}
                     {{ form.tag_no(class="form-control") }}
                 </div>
@@ -22,8 +30,12 @@
                     {{ form.gender(class="form-select") }}
                 </div>
                 <div class="col-md-4">
-                    {{ form.breed_id.label(class="form-label") }}
-                    {{ form.breed_id(class="form-select") }}
+                    {{ form.father_id.label(class="form-label") }}
+                    {{ form.father_id(class="form-select") }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.mother_id.label(class="form-label") }}
+                    {{ form.mother_id(class="form-select") }}
                 </div>
                 <div class="col-md-4">
                     {{ form.date_of_birth.label(class="form-label") }}
@@ -81,4 +93,14 @@
         </form>
     </div>
 </div>
+{% if not animal is defined %}
+<script>
+    const breedSelect = document.getElementById('breed_id');
+    const governmentTag = document.getElementById('government_tag_no');
+    const governmentTagPreviews = {{ government_tag_previews|tojson }};
+    breedSelect.addEventListener('change', () => {
+        governmentTag.value = governmentTagPreviews[breedSelect.value] || '';
+    });
+</script>
+{% endif %}
 {% endblock %}

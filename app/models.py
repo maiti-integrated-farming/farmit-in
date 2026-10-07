@@ -469,8 +469,9 @@ class Animal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     farm_id = db.Column(db.Integer, db.ForeignKey('farms.id'), nullable=False)
     tag_no = db.Column(db.String(40), nullable=False)
+    government_tag_no = db.Column(db.String(40))
     name = db.Column(db.String(80))
-    gender = db.Column(db.String(10))  # MALE, FEMALE
+    gender = db.Column(db.String(10))  # MALE, FEMALE, CASTRATED
     breed_id = db.Column(db.Integer, db.ForeignKey('breeds.id'), nullable=False)
     date_of_birth = db.Column(db.Date)
     mother_id = db.Column(db.Integer, db.ForeignKey('animals.id'))

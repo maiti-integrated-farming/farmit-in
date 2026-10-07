@@ -97,6 +97,7 @@ def _ensure_runtime_schema():
         'animals': {
             'feed_id': 'INTEGER',
             'daily_feed_quantity': 'NUMERIC(12, 2)',
+            'government_tag_no': 'VARCHAR(40)',
         },
         'feeds': {
             'expiry_date': 'DATE',
@@ -114,6 +115,12 @@ def _ensure_runtime_schema():
                 statement = f'ALTER TABLE {table} ADD COLUMN {name} {definition}'
                 db.session.execute(text(statement))
                 changed = True
+    index_names = {index['name'] for index in inspector.get_indexes('animals')}
+    if 'uq_animals_government_tag_no' not in index_names:
+        db.session.execute(text(
+            'CREATE UNIQUE INDEX uq_animals_government_tag_no ON animals (government_tag_no)'
+        ))
+        changed = True
     if changed:
         db.session.commit()
 
