@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from app.forms import TreatmentForm, VaccinationForm
 from app import _sync_organization_owner_flags
+from app.routes.animals import _government_tag_previews, _government_tag_prefix, _next_government_tag
 from app.models import (
     Animal, AnimalFeedConsumption, Breed, Farm, Feed, Organization, Role,
     CommonMedicine, Species, StaffMembership, SubscriptionPlan, User, UserInvitation, db,
@@ -28,6 +29,30 @@ def test_common_medicines_schema_and_similarity(app):
     unrelated_match = _medicine_similarity('fever cough', 'Hoof injury and lameness')
     assert close_match > unrelated_match
     assert close_match >= 0.18
+
+
+def test_added_cattle_breeds_have_government_tag_logic(app):
+    with app.app_context():
+        cattle = Species.query.filter_by(name='Cattle').one()
+        breeds = {
+            breed.name: breed
+            for breed in Breed.query.filter_by(species_id=cattle.id).all()
+        }
+        added_breeds = {name: breeds[name] for name in ('Girlando', 'CBJ', 'PJ')}
+        previews = _government_tag_previews(added_breeds.values())
+
+        assert {
+            name: _government_tag_prefix(breed)
+            for name, breed in added_breeds.items()
+        } == {'Girlando': 'CG', 'CBJ': 'CC', 'PJ': 'CP'}
+        assert {
+            name: previews[str(breed.id)]
+            for name, breed in added_breeds.items()
+        } == {'Girlando': 'CG 0001', 'CBJ': 'CC 0001', 'PJ': 'CP 0001'}
+        assert {
+            name: _next_government_tag(breed)
+            for name, breed in added_breeds.items()
+        } == {'Girlando': 'CG 0001', 'CBJ': 'CC 0001', 'PJ': 'CP 0001'}
 
 
 def test_staff_cannot_open_farm_setup(app, client):
