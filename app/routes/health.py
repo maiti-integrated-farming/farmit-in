@@ -1,12 +1,33 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, session, request
+from flask import Blueprint, render_template, redirect, url_for, flash, session, request, abort
 from flask_login import login_required, current_user
-from app.models import db, Vaccination, Treatment, Animal, Expense
-from app.forms import VaccinationForm, TreatmentForm
+from app.models import db, Vaccination, Treatment, Animal, Expense, CommonMedicine
+from app.forms import VaccinationForm, TreatmentForm, CommonMedicineForm
 from app.decorators import farm_required, permission_required
 from datetime import datetime, timedelta
 from sqlalchemy import and_, func
+from difflib import SequenceMatcher
+import re
 
 health_bp = Blueprint('health', __name__)
+
+
+def _medicine_similarity(query, value):
+    """Score a local text match without requiring database full-text support."""
+    query = re.sub(r'[^a-z0-9 ]', ' ', query.lower()).strip()
+    value = re.sub(r'[^a-z0-9 ]', ' ', value.lower()).strip()
+    if not query or not value:
+        return 0
+    query_words = set(query.split())
+    value_words = set(value.split())
+    overlap = len(query_words & value_words) / len(query_words)
+    sequence = SequenceMatcher(None, query, value).ratio()
+    token_sequence = max(
+        (SequenceMatcher(None, query_word, value_word).ratio()
+         for query_word in query_words for value_word in value_words),
+        default=0,
+    )
+    substring = 1 if query in value else 0
+    return (overlap * 0.45) + (sequence * 0.25) + (token_sequence * 0.2) + (substring * 0.1)
 
 
 @health_bp.route('/vaccinations')
@@ -345,3 +366,71 @@ def add_medication_template():
         return redirect(url_for('health.list_medication_templates'))
     
     return render_template('health/medication_template_form.html', form=form)
+
+
+@health_bp.route('/common-medicines', methods=['GET', 'POST'])
+@login_required
+@farm_required
+@permission_required('view_health')
+def common_medicines():
+    """Manage and search the farm's common medicine reference."""
+    farm_id = session['current_farm_id']
+    form = CommonMedicineForm()
+
+    if request.method == 'POST':
+        if not current_user.has_permission(farm_id, 'manage_health'):
+            abort(403)
+        if form.validate_on_submit():
+            medicine = CommonMedicine(
+                farm_id=farm_id,
+                medicine_name=form.medicine_name.data.strip(),
+                generic_name=form.generic_name.data.strip() if form.generic_name.data else None,
+                symptoms=form.symptoms.data.strip(),
+                indications=form.indications.data.strip() if form.indications.data else None,
+                dosage=form.dosage.data.strip() if form.dosage.data else None,
+                dosage_unit=form.dosage_unit.data.strip() if form.dosage_unit.data else None,
+                administration_route=form.administration_route.data or None,
+                frequency=form.frequency.data.strip() if form.frequency.data else None,
+                duration_days=form.duration_days.data,
+                contraindications=form.contraindications.data.strip() if form.contraindications.data else None,
+                side_effects=form.side_effects.data.strip() if form.side_effects.data else None,
+                withdrawal_period_days=form.withdrawal_period_days.data,
+                notes=form.notes.data.strip() if form.notes.data else None,
+                is_active=form.is_active.data,
+                created_by=current_user.id,
+                updated_by=current_user.id,
+            )
+            db.session.add(medicine)
+            db.session.commit()
+            flash('Common medicine added.', 'success')
+            return redirect(url_for('health.common_medicines'))
+
+    query_text = request.args.get('q', '').strip()
+    search_by = request.args.get('search_by', 'medicine')
+    if search_by not in {'medicine', 'symptoms'}:
+        search_by = 'medicine'
+
+    entries = CommonMedicine.query.filter_by(farm_id=farm_id, is_active=True).all()
+    if query_text:
+        ranked_entries = []
+        for entry in entries:
+            search_text = (
+                f'{entry.medicine_name} {entry.generic_name or ""}'
+                if search_by == 'medicine' else
+                f'{entry.symptoms} {entry.indications or ""}'
+            )
+            score = _medicine_similarity(query_text, search_text)
+            if score >= 0.18:
+                ranked_entries.append((score, entry))
+        entries = [entry for _, entry in sorted(ranked_entries, key=lambda item: item[0], reverse=True)]
+    else:
+        entries.sort(key=lambda entry: entry.medicine_name.lower())
+
+    return render_template(
+        'health/common_medicines.html',
+        form=form,
+        medicines=entries,
+        query_text=query_text,
+        search_by=search_by,
+        can_manage=current_user.has_permission(farm_id, 'manage_health'),
+    )

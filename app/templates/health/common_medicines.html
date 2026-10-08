@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Common Medicines{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-capsule-pill text-success"></i> Common Medicines</h2>
+            <p class="text-muted mb-0">Search the farm reference by medicine or related symptoms.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% if can_manage %}
+        <div class="col-xl-5">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="mb-0">Add Medicine</h5></div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.medicine_name.label(class="form-label") }}
+                                {{ form.medicine_name(class="form-control", required=true) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.generic_name.label(class="form-label") }}
+                                {{ form.generic_name(class="form-control") }}
+                            </div>
+                            <div class="col-12">
+                                {{ form.symptoms.label(class="form-label") }}
+                                {{ form.symptoms(class="form-control", rows=2, required=true, placeholder="Fever, nasal discharge, loss of appetite") }}
+                            </div>
+                            <div class="col-12">
+                                {{ form.indications.label(class="form-label") }}
+                                {{ form.indications(class="form-control", rows=2) }}
+                            </div>
+                            <div class="col-md-5">
+                                {{ form.dosage.label(class="form-label") }}
+                                {{ form.dosage(class="form-control", placeholder="10") }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.dosage_unit.label(class="form-label") }}
+                                {{ form.dosage_unit(class="form-control", placeholder="ml") }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.administration_route.label(class="form-label") }}
+                                {{ form.administration_route(class="form-select") }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.frequency.label(class="form-label") }}
+                                {{ form.frequency(class="form-control", placeholder="Twice daily") }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.duration_days.label(class="form-label") }}
+                                {{ form.duration_days(class="form-control", min=1) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.contraindications.label(class="form-label") }}
+                                {{ form.contraindications(class="form-control", rows=2) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.side_effects.label(class="form-label") }}
+                                {{ form.side_effects(class="form-control", rows=2) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.withdrawal_period_days.label(class="form-label") }}
+                                {{ form.withdrawal_period_days(class="form-control", min=0) }}
+                            </div>
+                            <div class="col-12">
+                                {{ form.notes.label(class="form-label") }}
+                                {{ form.notes(class="form-control", rows=2) }}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ form.is_active(class="form-check-input", checked=true) }}
+                                    {{ form.is_active.label(class="form-check-label") }}
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                {{ form.submit(class="btn btn-success") }}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="col-xl-{{ 7 if can_manage else 12 }}">
+            <div class="card">
+                <div class="card-header"><h5 class="mb-0">Search Reference</h5></div>
+                <div class="card-body">
+                    <form method="GET" class="row g-2 mb-4">
+                        <div class="col-md-3">
+                            <select name="search_by" class="form-select" aria-label="Search field">
+                                <option value="medicine" {% if search_by == 'medicine' %}selected{% endif %}>By medicine</option>
+                                <option value="symptoms" {% if search_by == 'symptoms' %}selected{% endif %}>By symptoms</option>
+                            </select>
+                        </div>
+                        <div class="col-md-7">
+                            <input type="search" name="q" value="{{ query_text }}" class="form-control" placeholder="Try fever, cough, deworming..." aria-label="Search common medicines">
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button type="submit" class="btn btn-outline-success"><i class="bi bi-search"></i> Search</button>
+                        </div>
+                    </form>
+
+                    {% if query_text %}
+                    <p class="small text-muted">{{ medicines|length }} matching result{{ '' if medicines|length == 1 else 's' }} for "{{ query_text }}"</p>
+                    {% endif %}
+                    <div class="row g-3">
+                        {% for medicine in medicines %}
+                        <div class="col-12">
+                            <article class="border rounded p-3">
+                                <div class="d-flex justify-content-between gap-3">
+                                    <div>
+                                        <h5 class="mb-1">{{ medicine.medicine_name }}</h5>
+                                        {% if medicine.generic_name %}<span class="text-muted">{{ medicine.generic_name }}</span>{% endif %}
+                                    </div>
+                                    {% if medicine.withdrawal_period_days is not none %}
+                                    <span class="badge text-bg-warning align-self-start">{{ medicine.withdrawal_period_days }}d withdrawal</span>
+                                    {% endif %}
+                                </div>
+                                <div class="row mt-3 small">
+                                    <div class="col-md-6"><strong>Symptoms:</strong><br>{{ medicine.symptoms }}</div>
+                                    <div class="col-md-6"><strong>Uses:</strong><br>{{ medicine.indications or 'Not specified' }}</div>
+                                    {% if medicine.dosage or medicine.frequency or medicine.administration_route %}
+                                    <div class="col-md-6 mt-2"><strong>Dosage:</strong> {{ medicine.dosage or 'Not specified' }} {{ medicine.dosage_unit or '' }}{% if medicine.frequency %}, {{ medicine.frequency }}{% endif %}</div>
+                                    <div class="col-md-6 mt-2"><strong>Route:</strong> {{ medicine.administration_route or 'Not specified' }}{% if medicine.duration_days %}, {{ medicine.duration_days }} days{% endif %}</div>
+                                    {% endif %}
+                                    {% if medicine.contraindications %}<div class="col-md-6 mt-2"><strong>Do not use when:</strong><br>{{ medicine.contraindications }}</div>{% endif %}
+                                    {% if medicine.side_effects %}<div class="col-md-6 mt-2"><strong>Side effects:</strong><br>{{ medicine.side_effects }}</div>{% endif %}
+                                </div>
+                                {% if medicine.notes %}<p class="small text-muted border-top mt-3 pt-2 mb-0">{{ medicine.notes }}</p>{% endif %}
+                            </article>
+                        </div>
+                        {% else %}
+                        <div class="col-12 text-center text-muted py-5">
+                            <i class="bi bi-capsule fs-1 d-block mb-2"></i>
+                            No common medicines match this search.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

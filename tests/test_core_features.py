@@ -6,8 +6,9 @@ from app import _sync_organization_owner_flags
 from app.routes.animals import _government_tag_previews, _government_tag_prefix, _next_government_tag
 from app.models import (
     Animal, AnimalFeedConsumption, Breed, Farm, Feed, Organization, Role,
-    Species, StaffMembership, SubscriptionPlan, User, UserInvitation, db,
+    CommonMedicine, Species, StaffMembership, SubscriptionPlan, User, UserInvitation, db,
 )
+from app.routes.health import _medicine_similarity
 
 
 def test_health_dropdown_choices(app):
@@ -17,6 +18,17 @@ def test_health_dropdown_choices(app):
 
     assert {'DEWORMING', 'CALCIUM_VITAMIN', 'GENERAL_MEDICINE'} <= medicine_values
     assert {'FMD', 'LSD', 'HS', 'BQ', 'ANTHRAX', 'PPR', 'GOAT_POX', 'ENTEROTOXEMIA'} <= vaccine_values
+
+
+def test_common_medicines_schema_and_similarity(app):
+    with app.app_context():
+        assert 'common_medicines' in db.metadata.tables
+        assert CommonMedicine.__table__.columns['farm_id'].nullable is False
+
+    close_match = _medicine_similarity('fever cough', 'Fever and coughing with loss of appetite')
+    unrelated_match = _medicine_similarity('fever cough', 'Hoof injury and lameness')
+    assert close_match > unrelated_match
+    assert close_match >= 0.18
 
 
 def test_added_cattle_breeds_have_government_tag_logic(app):
