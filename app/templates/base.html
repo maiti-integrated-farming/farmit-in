@@ -109,6 +109,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'health.common_medicines' %}active{% endif %}" href="{{ url_for('health.common_medicines') }}">
+                        <i class="bi bi-capsule-pill"></i> Common Medicines
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if 'feed' in request.endpoint %}active{% endif %}" href="{{ url_for('feed.list_feeds') }}">
                         <i class="bi bi-basket"></i> Feed
                     </a>

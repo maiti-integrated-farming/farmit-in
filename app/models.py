@@ -1235,3 +1235,38 @@ class MedicationTemplate(db.Model):
     
     def __repr__(self):
         return f'<MedicationTemplate {self.name}>'
+
+
+class CommonMedicine(db.Model):
+    """Farm-specific medicine reference entries searchable by symptoms."""
+    __tablename__ = 'common_medicines'
+
+    id = db.Column(db.Integer, primary_key=True)
+    farm_id = db.Column(db.Integer, db.ForeignKey('farms.id'), nullable=False)
+    medicine_name = db.Column(db.String(160), nullable=False)
+    generic_name = db.Column(db.String(160))
+    symptoms = db.Column(db.Text, nullable=False)
+    indications = db.Column(db.Text)
+    dosage = db.Column(db.String(100))
+    dosage_unit = db.Column(db.String(30))
+    administration_route = db.Column(db.String(50))
+    frequency = db.Column(db.String(100))
+    duration_days = db.Column(db.Integer)
+    contraindications = db.Column(db.Text)
+    side_effects = db.Column(db.Text)
+    withdrawal_period_days = db.Column(db.Integer)
+    notes = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    farm = db.relationship('Farm', backref='common_medicines')
+    creator = db.relationship('User', foreign_keys=[created_by])
+    updater = db.relationship('User', foreign_keys=[updated_by])
+
+    __table_args__ = (Index('ix_common_medicines_farm_active', 'farm_id', 'is_active'),)
+
+    def __repr__(self):
+        return f'<CommonMedicine {self.medicine_name} farm={self.farm_id}>'

@@ -524,6 +524,28 @@ class MedicationTemplateForm(FlaskForm):
     submit = SubmitField('Save Medication Template')
 
 
+class CommonMedicineForm(FlaskForm):
+    """Form for farm-specific medicine and symptom reference entries."""
+    medicine_name = StringField('Medicine Name', validators=[DataRequired(), Length(1, 160)])
+    generic_name = StringField('Generic Name', validators=[Optional(), Length(0, 160)])
+    symptoms = TextAreaField('Symptoms', validators=[DataRequired()])
+    indications = TextAreaField('Common Uses / Indications', validators=[Optional()])
+    dosage = StringField('Dosage', validators=[Optional(), Length(0, 100)])
+    dosage_unit = StringField('Dosage Unit', validators=[Optional(), Length(0, 30)])
+    administration_route = SelectField('Administration Route', choices=[
+        ('', 'Select route'), ('ORAL', 'Oral'), ('INJECTION', 'Injection'),
+        ('TOPICAL', 'Topical'), ('IV', 'Intravenous'), ('OTHER', 'Other')
+    ], validators=[Optional()])
+    frequency = StringField('Frequency', validators=[Optional(), Length(0, 100)])
+    duration_days = IntegerField('Typical Duration (days)', validators=[Optional(), NumberRange(min=1)])
+    contraindications = TextAreaField('Contraindications', validators=[Optional()])
+    side_effects = TextAreaField('Side Effects', validators=[Optional()])
+    withdrawal_period_days = IntegerField('Withdrawal Period (days)', validators=[Optional(), NumberRange(min=0)])
+    notes = TextAreaField('Notes', validators=[Optional()])
+    is_active = BooleanField('Active', default=True)
+    submit = SubmitField('Save Common Medicine')
+
+
 # =============================================================================
 # FEED CONSUMPTION FORM
 # =============================================================================
