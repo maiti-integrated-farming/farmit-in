@@ -377,6 +377,19 @@ def _seed_initial_data():
             Breed(species_id=cattle.id, name='Sahiwal'),
         ])
         db.session.commit()
+
+    cattle = Species.query.filter_by(name='Cattle').first()
+    if not cattle:
+        cattle = Species(name='Cattle')
+        db.session.add(cattle)
+        db.session.flush()
+    added_cattle_breeds = []
+    for breed_name in ('Girlando', 'CBJ', 'PJ'):
+        if not Breed.query.filter_by(species_id=cattle.id, name=breed_name).first():
+            added_cattle_breeds.append(Breed(species_id=cattle.id, name=breed_name))
+    if added_cattle_breeds:
+        db.session.add_all(added_cattle_breeds)
+        db.session.commit()
     
     # Create a platform admin user (for system administration)
     # In production, this should be created via a secure setup script
