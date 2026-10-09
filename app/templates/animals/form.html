@@ -8,6 +8,18 @@
     <div class="card-body">
         <form method="POST">
             {{ form.hidden_tag() }}
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>Unable to save animal.</strong>
+                <ul class="mb-0">
+                    {% for field_name, field_errors in form.errors.items() %}
+                    {% for error in field_errors %}
+                    <li>{{ field_name|replace('_', ' ')|title }}: {{ error }}</li>
+                    {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
             <div class="row g-3">
                 <div class="col-md-4">
                     {{ form.breed_id.label(class="form-label") }}

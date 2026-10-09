@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField, PasswordField, BooleanField, SubmitField, SelectField, SelectMultipleField,
-    TextAreaField, DateField, DecimalField, IntegerField, HiddenField, FormField, FieldList
+    TextAreaField, DateField, DecimalField, IntegerField, HiddenField, FormField, FieldList, Form
 )
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange
 from app.models import User, Organization
@@ -106,7 +106,10 @@ class InviteUserForm(FlaskForm):
             raise ValidationError('A user with this email already exists in the system.')
 
 
-class AnimalFeedAssignmentForm(FlaskForm):
+class AnimalFeedAssignmentForm(Form):
+    class Meta:
+        csrf = False
+
     feed_id = SelectField('Feed', coerce=int, validators=[Optional()])
     quantity = DecimalField('Assigned feed quantity', validators=[Optional(), NumberRange(min=0)])
     unit = SelectField('Unit', choices=[

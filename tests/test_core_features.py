@@ -5,7 +5,7 @@ from app.forms import TreatmentForm, VaccinationForm
 from app import _sync_organization_owner_flags
 from app.routes.animals import _government_tag_previews, _government_tag_prefix, _next_government_tag
 from app.models import (
-    Animal, AnimalFeedConsumption, Breed, Farm, Feed, Organization, Role,
+    Animal, AnimalFeedAssignment, AnimalFeedConsumption, Breed, Farm, Feed, Organization, Role,
     CommonMedicine, Species, StaffMembership, SubscriptionPlan, User, UserInvitation, db,
 )
 from app.routes.health import _medicine_similarity
@@ -18,6 +18,73 @@ def test_health_dropdown_choices(app):
 
     assert {'DEWORMING', 'CALCIUM_VITAMIN', 'GENERAL_MEDICINE'} <= medicine_values
     assert {'FMD', 'LSD', 'HS', 'BQ', 'ANTHRAX', 'PPR', 'GOAT_POX', 'ENTEROTOXEMIA'} <= vaccine_values
+
+
+def test_animal_can_be_created_with_multiple_feed_assignments(app, client):
+    with app.app_context():
+        plan = SubscriptionPlan(name='Animal Feed Test', slug='animal-feed-test', trial_days=14)
+        owner = User(username='animalfeedowner', email='animalfeedowner@example.com',
+                     first_name='Animal', last_name='Feed', is_organization_owner=True,
+                     is_organization_admin=True)
+        owner.set_password('password123')
+        db.session.add_all([plan, owner])
+        db.session.flush()
+        organization = Organization(
+            name='Animal Feed Farm', slug='animal-feed-farm', owner_id=owner.id,
+            subscription_plan_id=plan.id, subscription_status='TRIAL',
+            trial_ends_at=datetime.utcnow() + timedelta(days=14),
+        )
+        owner.organization = organization
+        farm = Farm(organization=organization, name='Main Farm', code='AF-1')
+        species = Species(name='Feed Test Species')
+        breed = Breed(species=species, name='Feed Test Breed')
+        db.session.add_all([organization, farm, species, breed])
+        db.session.flush()
+        first_feed = Feed(farm_id=farm.id, feed_name='Hay Test', unit='KG')
+        second_feed = Feed(farm_id=farm.id, feed_name='Grain Test', unit='KG')
+        db.session.add_all([first_feed, second_feed])
+        db.session.flush()
+        role = Role.query.filter_by(code='OWNER').one()
+        db.session.add(StaffMembership(
+            user_id=owner.id, farm_id=farm.id, role_id=role.id,
+            joining_date=date.today(), is_active=True,
+        ))
+        db.session.commit()
+        owner_id = owner.id
+        farm_id, breed_id = farm.id, breed.id
+        first_feed_id, second_feed_id = first_feed.id, second_feed.id
+
+    client.post('/login', data={
+        'username': 'animalfeedowner', 'password': 'password123',
+    })
+    with client.session_transaction() as session_data:
+        session_data['current_farm_id'] = farm_id
+        session_data['_user_id'] = str(owner_id)
+        session_data['_fresh'] = True
+
+    response = client.post('/animals/add', data={
+        'tag_no': 'AF-001',
+        'name': 'Multi Feed Animal',
+        'gender': 'FEMALE',
+        'breed_id': breed_id,
+        'source': 'BORN_ON_FARM',
+        'status': 'ACTIVE',
+        'feed_assignments-0-feed_id': first_feed_id,
+        'feed_assignments-0-quantity': '500',
+        'feed_assignments-0-unit': 'G',
+        'feed_assignments-1-feed_id': second_feed_id,
+        'feed_assignments-1-quantity': '1',
+        'feed_assignments-1-unit': 'KG',
+    }, follow_redirects=False)
+
+    assert response.status_code == 302, response.get_data(as_text=True)
+    assert response.location.endswith('/animals/'), response.location
+    with app.app_context():
+        animal = Animal.query.filter_by(farm_id=farm_id, tag_no='AF-001').one()
+        assignments = AnimalFeedAssignment.query.filter_by(animal_id=animal.id).all()
+        assert {(item.feed_id, item.quantity, item.unit) for item in assignments} == {
+            (first_feed_id, 500, 'G'), (second_feed_id, 1, 'KG'),
+        }
 
 
 def test_common_medicines_schema_and_similarity(app):

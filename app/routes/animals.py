@@ -55,7 +55,7 @@ def _save_feed_assignments(animal, form, feeds):
     for assignment in form.feed_assignments.data:
         feed_id = assignment['feed_id']
         if not feed_id:
-            if assignment['quantity'] or assignment['unit']:
+            if assignment['quantity']:
                 raise ValueError('Select a feed before entering its quantity.')
             continue
         if assignment['quantity'] is None or not assignment['unit']:
@@ -184,6 +184,8 @@ def add_animal():
         db.session.commit()
         flash(f'Animal {animal.tag_no} added successfully.', 'success')
         return redirect(url_for('animals.list_animals'))
+    if request.method == 'POST':
+        flash('Please correct the highlighted animal details before saving.', 'danger')
     return render_template(
         'animals/form.html', form=form, title='Add Animal',
         government_tag_previews=government_tag_previews,
