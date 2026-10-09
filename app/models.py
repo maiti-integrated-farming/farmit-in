@@ -527,7 +527,8 @@ class Animal(db.Model):
             base_requirement *= 0.8  # 20% less for sick animals
         
         return round(base_requirement, 2)
-    
+
+
     def get_age_in_months(self):
         """Calculate age in months."""
         if not self.date_of_birth:
@@ -553,6 +554,32 @@ class Animal(db.Model):
 
     def __repr__(self):
         return f'<Animal {self.tag_no}>'
+
+
+class AnimalFeedAssignment(db.Model):
+    """Daily feed assignment for one animal and one inventory feed."""
+    __tablename__ = 'animal_feed_assignments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    animal_id = db.Column(db.Integer, db.ForeignKey('animals.id'), nullable=False)
+    feed_id = db.Column(db.Integer, db.ForeignKey('feeds.id'), nullable=False)
+    quantity = db.Column(db.Numeric(12, 3), nullable=False)
+    unit = db.Column(db.String(2), nullable=False, default='KG')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    animal = db.relationship('Animal', backref=db.backref('feed_assignments', cascade='all, delete-orphan'))
+    feed = db.relationship('Feed', backref='animal_feed_assignments')
+
+    __table_args__ = (
+        UniqueConstraint('animal_id', 'feed_id', name='uq_animal_feed_assignment'),
+        Index('idx_animal_feed_assignment_animal', 'animal_id'),
+    )
+
+    @property
+    def quantity_kg(self):
+        multipliers = {'MG': Decimal('0.000001'), 'G': Decimal('0.001'), 'KG': Decimal('1')}
+        return Decimal(str(self.quantity or 0)) * multipliers[self.unit]
 
 
 class AnimalMovement(db.Model):

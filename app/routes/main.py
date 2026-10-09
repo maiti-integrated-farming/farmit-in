@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request
 from flask_login import login_required, current_user
-from app.models import db, Farm, Animal, Vaccination, Deworming, Treatment, Notification, Expense, AnimalSale, Feed
+from app.models import db, Farm, Animal, AnimalFeedAssignment, Vaccination, Deworming, Treatment, Notification, Expense, AnimalSale, Feed
 from app.decorators import farm_required, organization_required
 from datetime import date, timedelta
 from decimal import Decimal
@@ -152,34 +152,37 @@ def dashboard():
     ).all()
     total_daily_feed = Decimal('0')
     for animal in active_animals:
-        required = Decimal(str(animal.calculate_daily_feed_requirement() or 0))
-        total_daily_feed += required
-        if not animal.assigned_feed or required <= 0:
-            continue
-        already_recorded = AnimalFeedConsumption.query.filter_by(
-            animal_id=animal.id, feed_id=animal.feed_id, date=today,
-            feeding_method='AUTO'
-        ).first()
-        if already_recorded:
-            continue
-        feed = animal.assigned_feed
-        available = Decimal(str(feed.stock_quantity or 0))
-        consumed = min(available, required)
-        if consumed > 0:
-            unit_cost = Decimal(str(feed.purchase_price or 0))
-            db.session.add(AnimalFeedConsumption(
-                animal_id=animal.id,
-                feed_id=feed.id,
-                farm_id=farm_id,
-                date=today,
-                quantity=float(consumed),
-                unit=feed.unit or 'KG',
-                unit_cost=unit_cost or None,
-                total_cost=unit_cost * consumed if unit_cost else None,
-                feeding_method='AUTO',
-                recorded_by=current_user.id,
-            ))
-            feed.stock_quantity = available - consumed
+        assignments = animal.feed_assignments
+        if not assignments and animal.assigned_feed and animal.daily_feed_quantity:
+            assignments = [AnimalFeedAssignment(
+                animal_id=animal.id, feed_id=animal.feed_id,
+                quantity=animal.daily_feed_quantity, unit='KG',
+                feed=animal.assigned_feed,
+            )]
+        for assignment in assignments:
+            required = assignment.quantity_kg
+            total_daily_feed += required
+            if not assignment.feed or required <= 0:
+                continue
+            already_recorded = AnimalFeedConsumption.query.filter_by(
+                animal_id=animal.id, feed_id=assignment.feed_id, date=today,
+                feeding_method='AUTO'
+            ).first()
+            if already_recorded:
+                continue
+            feed = assignment.feed
+            available = Decimal(str(feed.stock_quantity or 0))
+            consumed = min(available, required)
+            if consumed > 0:
+                unit_cost = Decimal(str(feed.purchase_price or 0))
+                db.session.add(AnimalFeedConsumption(
+                    animal_id=animal.id, feed_id=feed.id, farm_id=farm_id,
+                    date=today, quantity=float(consumed), unit='KG',
+                    unit_cost=unit_cost or None,
+                    total_cost=unit_cost * consumed if unit_cost else None,
+                    feeding_method='AUTO', recorded_by=current_user.id,
+                ))
+                feed.stock_quantity = available - consumed
     db.session.commit()
     
     # NEW: Get current feed stock total

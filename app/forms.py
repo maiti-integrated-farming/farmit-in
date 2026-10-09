@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField, PasswordField, BooleanField, SubmitField, SelectField, SelectMultipleField,
-    TextAreaField, DateField, DecimalField, IntegerField, HiddenField
+    TextAreaField, DateField, DecimalField, IntegerField, HiddenField, FormField, FieldList
 )
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, NumberRange
 from app.models import User, Organization
@@ -106,6 +106,16 @@ class InviteUserForm(FlaskForm):
             raise ValidationError('A user with this email already exists in the system.')
 
 
+class AnimalFeedAssignmentForm(FlaskForm):
+    feed_id = SelectField('Feed', coerce=int, validators=[Optional()])
+    quantity = DecimalField('Assigned feed quantity', validators=[Optional(), NumberRange(min=0)])
+    unit = SelectField('Unit', choices=[
+        ('MG', 'Milligram (mg)'),
+        ('G', 'Gram (g)'),
+        ('KG', 'Kilogram (kg)'),
+    ], validators=[Optional()])
+
+
 class AnimalForm(FlaskForm):
     tag_no = StringField('TAG NUMBER (by govt)', validators=[DataRequired(), Length(1, 40)])
     name = StringField('Name', validators=[Optional(), Length(0, 80)])
@@ -119,8 +129,7 @@ class AnimalForm(FlaskForm):
     current_weight = DecimalField('Current Weight (kg)', validators=[Optional(), NumberRange(min=0)])
     purchase_date = DateField('Purchase Date', validators=[Optional()])
     purchase_price = DecimalField('Purchase Price', validators=[Optional(), NumberRange(min=0)])
-    feed_id = SelectField('Assigned Feed', coerce=int, validators=[Optional()])
-    daily_feed_quantity = DecimalField('Daily Feed Quantity', validators=[Optional(), NumberRange(min=0)])
+    feed_assignments = FieldList(FormField(AnimalFeedAssignmentForm), min_entries=1)
     source = SelectField('Source', choices=[
         ('BORN_ON_FARM', 'Born on Farm'),
         ('PURCHASED', 'Purchased'),

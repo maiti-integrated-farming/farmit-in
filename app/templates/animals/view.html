@@ -39,6 +39,19 @@
                 {% else %}<li class="list-group-item text-muted">No feed consumption records</li>{% endfor %}
             </ul>
         </div>
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>Assigned Feed Quantity</strong></div>
+            <ul class="list-group list-group-flush">
+                {% for assignment in animal.feed_assignments %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ assignment.feed.feed_name }}</span>
+                    <span>{{ assignment.quantity }} {{ assignment.unit }}</span>
+                </li>
+                {% else %}
+                <li class="list-group-item text-muted">No assigned feed</li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
     <div class="col-md-6">
         <div class="card mb-3">

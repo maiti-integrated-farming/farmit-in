@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request
 from flask_login import login_required, current_user
-from app.models import db, Animal, AnimalFeedConsumption, Feed, Breed, Location, Species, AnimalWeight, AnimalMovement, Expense
+from app.models import db, Animal, AnimalFeedAssignment, AnimalFeedConsumption, Feed, Breed, Location, Species, AnimalWeight, AnimalMovement, Expense
 from app.forms import AnimalForm, AnimalFeedConsumptionForm, LocationForm
 from app.decorators import farm_required, permission_required
 from datetime import datetime
@@ -42,6 +42,38 @@ def _next_government_tag(breed):
         if (match := re.fullmatch(rf'{re.escape(prefix)} (\d+)', tag_number))
     ]
     return f'{prefix} {max(sequences, default=0) + 1:04d}'
+
+
+def _set_feed_assignment_choices(form, feeds):
+    choices = [(feed.id, f'{feed.feed_name} ({feed.unit or "KG"})') for feed in feeds]
+    for assignment in form.feed_assignments:
+        assignment.feed_id.choices = [(0, '-- Select feed --')] + choices
+
+
+def _save_feed_assignments(animal, form, feeds):
+    selected_feed_ids = []
+    for assignment in form.feed_assignments.data:
+        feed_id = assignment['feed_id']
+        if not feed_id:
+            if assignment['quantity'] or assignment['unit']:
+                raise ValueError('Select a feed before entering its quantity.')
+            continue
+        if assignment['quantity'] is None or not assignment['unit']:
+            raise ValueError('Each selected feed needs a quantity and unit.')
+        if feed_id in selected_feed_ids:
+            raise ValueError('A feed cannot be assigned more than once to the same animal.')
+        if not any(feed.id == feed_id for feed in feeds):
+            raise ValueError('Invalid feed selected.')
+        selected_feed_ids.append(feed_id)
+    animal.feed_assignments.clear()
+    for assignment in form.feed_assignments.data:
+        if assignment['feed_id']:
+            db.session.add(AnimalFeedAssignment(
+                animal=animal,
+                feed_id=assignment['feed_id'],
+                quantity=assignment['quantity'],
+                unit=assignment['unit'],
+            ))
 
 
 @animals_bp.route('/')
@@ -93,9 +125,8 @@ def add_animal():
         (a.id, f'{a.tag_no} - {a.name}' if a.name else a.tag_no)
         for a in Animal.query.filter_by(farm_id=farm_id, gender='FEMALE').order_by(Animal.tag_no).all()
     ]
-    form.feed_id.choices = [(0, '-- No assigned feed --')] + [
-        (f.id, f'{f.feed_name} ({f.unit})') for f in Feed.query.filter_by(farm_id=farm_id).order_by(Feed.feed_name).all()
-    ]
+    feeds = Feed.query.filter_by(farm_id=farm_id).order_by(Feed.feed_name).all()
+    _set_feed_assignment_choices(form, feeds)
     if form.validate_on_submit():
         # Check unique tag
         exists = Animal.query.filter_by(farm_id=farm_id, tag_no=form.tag_no.data).first()
@@ -122,8 +153,6 @@ def add_animal():
             current_weight=form.current_weight.data,
             purchase_date=form.purchase_date.data,
             purchase_price=form.purchase_price.data,
-            feed_id=form.feed_id.data or None,
-            daily_feed_quantity=form.daily_feed_quantity.data,
             source=form.source.data,
             location_id=form.location_id.data or None,
             status=form.status.data,
@@ -132,6 +161,14 @@ def add_animal():
             updated_by=current_user.id,
         )
         db.session.add(animal)
+        try:
+            _save_feed_assignments(animal, form, feeds)
+        except ValueError as error:
+            db.session.rollback()
+            flash(str(error), 'danger')
+            return render_template('animals/form.html', form=form, title='Add Animal',
+                                   government_tag_previews=government_tag_previews,
+                                   government_tag_preview=government_tag_previews.get(str(form.breed_id.data), ''))
         if animal.source == 'PURCHASED' and animal.purchase_price:
             db.session.add(Expense(
                 farm_id=farm_id,
@@ -240,9 +277,22 @@ def edit_animal(id):
             Animal.farm_id == farm_id, Animal.gender == 'FEMALE', Animal.id != id
         ).order_by(Animal.tag_no).all()
     ]
-    form.feed_id.choices = [(0, '-- No assigned feed --')] + [
-        (f.id, f'{f.feed_name} ({f.unit})') for f in Feed.query.filter_by(farm_id=farm_id).order_by(Feed.feed_name).all()
-    ]
+    feeds = Feed.query.filter_by(farm_id=farm_id).order_by(Feed.feed_name).all()
+    if not form.feed_assignments.data:
+        form.feed_assignments.entries = []
+        for assignment in animal.feed_assignments:
+            form.feed_assignments.append_entry({
+                'feed_id': assignment.feed_id,
+                'quantity': assignment.quantity,
+                'unit': assignment.unit,
+            })
+        if not animal.feed_assignments and animal.feed_id and animal.daily_feed_quantity:
+            form.feed_assignments.append_entry({
+                'feed_id': animal.feed_id,
+                'quantity': animal.daily_feed_quantity,
+                'unit': 'KG',
+            })
+    _set_feed_assignment_choices(form, feeds)
     if form.validate_on_submit():
         other = Animal.query.filter(
             Animal.farm_id == farm_id, Animal.tag_no == form.tag_no.data, Animal.id != id
@@ -250,7 +300,17 @@ def edit_animal(id):
         if other:
             flash('Tag number already exists.', 'danger')
             return render_template('animals/form.html', form=form, title='Edit Animal', animal=animal)
-        form.populate_obj(animal)
+        try:
+            _save_feed_assignments(animal, form, feeds)
+        except ValueError as error:
+            flash(str(error), 'danger')
+            return render_template('animals/form.html', form=form, title='Edit Animal', animal=animal)
+        for field_name in (
+            'tag_no', 'name', 'gender', 'breed_id', 'date_of_birth', 'color',
+            'birth_weight', 'current_weight', 'purchase_date', 'purchase_price',
+            'source', 'status', 'remarks',
+        ):
+            setattr(animal, field_name, getattr(form, field_name).data)
         if form.location_id.data == 0:
             animal.location_id = None
         if form.father_id.data == 0:

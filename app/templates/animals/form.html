@@ -73,13 +73,20 @@
                     {{ form.purchase_price.label(class="form-label") }}
                     {{ form.purchase_price(class="form-control") }}
                 </div>
-                <div class="col-md-4">
-                    {{ form.feed_id.label(class="form-label") }}
-                    {{ form.feed_id(class="form-select") }}
-                </div>
-                <div class="col-md-4">
-                    {{ form.daily_feed_quantity.label(class="form-label") }}
-                    {{ form.daily_feed_quantity(class="form-control", placeholder="kg per day") }}
+                <div class="col-12">
+                    <label class="form-label">Assigned feed quantity</label>
+                    <div id="feed-assignments">
+                        {% for assignment in form.feed_assignments %}
+                        <div class="row g-2 mb-2 feed-assignment">
+                            <div class="col-md-5">{{ assignment.feed_id(class="form-select") }}</div>
+                            <div class="col-md-3">{{ assignment.quantity(class="form-control", placeholder="Quantity") }}</div>
+                            <div class="col-md-3">{{ assignment.unit(class="form-select") }}</div>
+                            <div class="col-md-1"><button type="button" class="btn btn-outline-danger remove-feed" aria-label="Remove feed">&times;</button></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="add-feed">Add more feeds</button>
+                    <small class="form-text text-muted">Choose a feed once and enter its daily quantity in mg, g, or kg.</small>
                 </div>
                 <div class="col-12">
                     {{ form.remarks.label(class="form-label") }}
@@ -103,4 +110,32 @@
     });
 </script>
 {% endif %}
+<script>
+    const assignments = document.getElementById('feed-assignments');
+    const addFeedButton = document.getElementById('add-feed');
+    addFeedButton.addEventListener('click', () => {
+        const index = assignments.querySelectorAll('.feed-assignment').length;
+        const template = assignments.querySelector('.feed-assignment').cloneNode(true);
+        template.innerHTML = template.innerHTML.replace(/feed_assignments-\d+-/g, `feed_assignments-${index}-`);
+        template.querySelectorAll('select, input').forEach(field => field.value = field.tagName === 'SELECT' && field.name.endsWith('-unit') ? 'KG' : '');
+        assignments.appendChild(template);
+        updateFeedOptions();
+    });
+    assignments.addEventListener('click', event => {
+        if (!event.target.classList.contains('remove-feed')) return;
+        const rows = assignments.querySelectorAll('.feed-assignment');
+        if (rows.length > 1) event.target.closest('.feed-assignment').remove();
+        updateFeedOptions();
+    });
+    function updateFeedOptions() {
+        const selected = [...assignments.querySelectorAll('select[name$="-feed_id"]')].map(select => select.value).filter(Boolean);
+        assignments.querySelectorAll('select[name$="-feed_id"]').forEach(select => {
+            [...select.options].forEach(option => {
+                option.disabled = option.value && selected.includes(option.value) && option.value !== select.value;
+            });
+        });
+    }
+    assignments.addEventListener('change', updateFeedOptions);
+    updateFeedOptions();
+</script>
 {% endblock %}
